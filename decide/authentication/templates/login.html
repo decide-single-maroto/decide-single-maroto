@@ -1,23 +1,18 @@
-{% load socialaccount %}
-    <div class="content-section">
-        <form method="POST">
-            {% csrf_token %}
-            <div class="form-group">
-                <button class="btn btn-outline-info" type="submit">Login</button>
-                <button class="btn btn-outline-info">
-                    <a href="{% provider_login_url 'google'%}?next=/">
-                        <i class="fab fa-google"></i>
-                        Login with Google
-                    </a>
-                </button>
-            </div>
-        </form>
-        <div class="border-top pt-3">
-            <small class="text-muted">
-                Need An Account? <a class="ml-2" href="{% url 'register' %}">Sign Up Now</a>
-            </small><br>
-            <small class="text-muted">
-                <a href="{% url 'password_reset' %}">Forgot password?</a>
-            </small>
-        </div>
-    </div>
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Login</title>
+</head>
+
+<body>
+    <h1>Login</h1>
+    <form action="{% url 'signin' %}" method="post">
+        {% csrf_token %}
+        <input type="text" name="username" placeholder="Username">
+        <input type="password" name="password" placeholder="Password">
+        <input type="submit" value="Login">
+    </form>
+</body>
+
+</html>

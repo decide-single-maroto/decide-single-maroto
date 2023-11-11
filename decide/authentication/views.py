@@ -8,10 +8,34 @@ from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import User
 from django.db import IntegrityError
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, render,redirect
 from django.core.exceptions import ObjectDoesNotExist
+from django.contrib.auth.views import LoginView
+from django.contrib.auth import authenticate
+
+from .forms import LoginForm
 
 from .serializers import UserSerializer
+
+class SigninView(LoginView):
+    success_url = '/'
+    error_message = 'Error al mostrar el formulario'
+
+    def post(self, request):
+        form_class = LoginForm(request.POST)
+
+       
+        if form_class.is_valid():
+            username = form_class.cleaned_data.get('username')
+            password = form_class.cleaned_data.ge('password')
+            
+            user = authenticate(request, username=username, password=password)
+
+        return render(request, 'login.html', {'form': form_class, 'msg': error_message})
+    
+    def get(self, request):
+        form_class = LoginForm(None)
+        return render(request, 'login.html', {'form': form_class, 'msg': None})
 
 
 class GetUserView(APIView):
