@@ -18,6 +18,6 @@
     - libpq-dev
     - python-setuptools
     - build-essential
-    - python-dev
+    - python3-dev
     - make
     - m4
