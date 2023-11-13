@@ -39,6 +39,10 @@ class Voting(models.Model):
     pub_key = models.OneToOneField(Key, related_name='voting', blank=True, null=True, on_delete=models.SET_NULL)
     auths = models.ManyToManyField(Auth, related_name='votings')
 
+    model = models.CharField(max_length=8, choices=[('IDENTITY','Identity'), ('DHONDT', "D'hondt")], default= 'IDENTITY')
+    seats = models.PositiveIntegerField(blank=True, null=True)
+
+
     tally = JSONField(blank=True, null=True)
     postproc = JSONField(blank=True, null=True)
 
@@ -123,7 +127,7 @@ class Voting(models.Model):
                 'votes': votes
             })
 
-        data = { 'type': 'IDENTITY', 'options': opts }
+        data = { 'type': (self.model), 'options': opts, 'seats':self.seats }
         postp = mods.post('postproc', json=data)
 
         self.postproc = postp
