@@ -10,10 +10,19 @@ from base.models import Auth, Key
 class Question(models.Model):
     desc = models.TextField()
 
+    cattegory = models.CharField(max_length=8,choices=[('YES/NO','yes/no'),('OPTIONS','options')],default="")
     def __str__(self):
         return self.desc
 
 
+class QuestionYesNo(models.Model):
+    
+    question = models.ForeignKey(Question, related_name='options_yes_no', on_delete=models.CASCADE)
+    option = models.CharField(Question, choices=[('YES','yes'),('NO','no')],default="", max_length=8)
+    
+    def save(self):
+        return super().save()
+    
 class QuestionOption(models.Model):
     question = models.ForeignKey(Question, related_name='options', on_delete=models.CASCADE)
     number = models.PositiveIntegerField(blank=True, null=True)
