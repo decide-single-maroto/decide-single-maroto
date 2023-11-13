@@ -1,3 +1,5 @@
+{% load socialaccount %}
+
 <!DOCTYPE html>
 <html lang="es">
 
@@ -90,7 +92,9 @@
         </form>
         <div class="google-login">
             <button class="google-button">
-                Iniciar sesión con Google
+                <a href="{% provider_login_url 'google'%}?next=http://127.0.0.1:8000/authentication/menu">
+                    Login with Google
+                </a>
             </button>
         </div>
     </div>

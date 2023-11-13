@@ -29,7 +29,7 @@ class SigninView(TemplateView):
             user = authenticate(request, username=username, password=password)
             if user is not None:
                 login(request, user)
-                return redirect("/")
+                return redirect("menuSignin")
             else:
                 error_message="Usuario y/o contraseña incorrecto/a"
         else:
@@ -40,6 +40,13 @@ class SigninView(TemplateView):
     def get(self, request):
         form_class = LoginForm(None)
         return render(request, 'login.html', {'form': form_class, 'msg': None})
+    
+class MenuView(TemplateView):
+    def post(self, request):
+        return render(request, 'menu.html')
+    
+    def get_template_names(self):
+        return ['menu.html']
 
 
 class GetUserView(APIView):
