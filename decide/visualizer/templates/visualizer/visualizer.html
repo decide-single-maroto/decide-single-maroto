@@ -25,19 +25,30 @@
             <div v-else>
                 <h2 class="heading">Resultados:</h2>
 
-                <table class="table table-bordered table-striped">
+                <table v-if="voting.model === 'DHONDT'" class="table table-bordered table-striped">
                     <thead>
-                        <tr>
-                            <th>Opción</th>
-                            <th>Puntuación</th>
-                            <th>Votos</th>
+                        <th>Opción</th>
+                        <th>Escaños</th>
+                    </thead>
+                    <tbody>
+                        <tr v-for="key,value in voting.postproc">
+                            <td>[[value]]</td>
+                            <td>[[key]]</td>
                         </tr>
+                    </tbody>
+                </table>
+
+                <table v-if="voting.model === 'IDENTITY'" class="table table-bordered table-striped">
+                    <thead>
+                        <th>Opción</th>
+                        <th>Puntuación</th>
+                        <th>Votos</th>
                     </thead>
                     <tbody>
                         <tr v-for="opt in voting.postproc" :key="opt.number">
-                            <th>[[opt.option]]</th>
-                            <td>[[opt.postproc]]</td>
-                            <td class="text-muted">[[opt.votes]]</td>
+                        <th>[[opt.option]]</th>
+                        <td>[[opt.postproc]]</td>
+                        <td class="text-muted">[[opt.votes]]</td>
                         </tr>
                     </tbody>
                 </table>

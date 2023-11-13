@@ -1,7 +1,6 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 
-
 class PostProcView(APIView):
 
     def identity(self, options):
@@ -21,6 +20,7 @@ class PostProcView(APIView):
         seats={}
 
         results={}
+        print(options)
         for opt in options: 
             if opt['option'] not in results: 
                 results[opt['option']] = opt['votes']
@@ -40,8 +40,8 @@ class PostProcView(APIView):
                 seats[next_seat]=1
 
 
+            
             t_votes[next_seat]=results[next_seat]/(seats[next_seat]+1)
-
         return Response(seats)
 
     def post(self, request):
