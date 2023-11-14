@@ -1,9 +1,9 @@
 from django.contrib import admin
 from django.utils import timezone
 
-from .models import QuestionOption , QuestionYesNo
+from .models import QuestionOption 
 from .models import Question
-from .models import Voting, VotingYesNo
+from .models import Voting
 
 from .filters import StartedFilter
 
@@ -61,5 +61,4 @@ class VotingAdmin(admin.ModelAdmin):
 
 admin.site.register(Voting, VotingAdmin)
 admin.site.register(Question, QuestionAdmin)
-admin.site.register(QuestionYesNo,QuiestionYesNoAdmin)
-admin.site.register(VotingYesNo, VotingYesNoAdmin )
+
