@@ -1,14 +1,46 @@
 <!DOCTYPE html>
 <html>
-    <head>
-        <meta charset="utf-8" />
-        <title>{% block title %}Decide!{% endblock %}</title>
-        {% block extrahead %}{% endblock %}
-    </head>
-    <body>
-        {% block content %}
-        {% endblock %}
+<head>
+    <meta charset="utf-8" />
+    <title>{% block title %}Decide!{% endblock %}</title>
+    
+    <script type="text/javascript" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
 
-        {% block extrabody %}{% endblock %}
-    </body>
+    <style>
+        #google_translate_element {
+            text-align: center; 
+            margin-top: 50px; 
+        }
+
+        #language-selector {
+            display: block; 
+            margin: 0 auto; 
+            text-align: center; 
+        }
+    </style>
+    {% block extrahead %}{% endblock %}
+</head>
+<body>
+    {% block content %}
+    {% endblock %}
+    <div id="google_translate_element" class="google"></div>
+
+    <script type="text/javascript">
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'es',
+                layout: google.translate.TranslateElement.InlineLayout.SIMPLE
+            }, 'google_translate_element');
+        }
+
+        function changeLanguage(languageCode) {
+            const selectElement = document.getElementById("google_translate_element");
+            const event = new Event('change');
+            selectElement.value = languageCode;
+            selectElement.dispatchEvent(event);
+        }
+    </script>
+    {% block extrabody %}
+    {% endblock %}
+</body>
 </html>
