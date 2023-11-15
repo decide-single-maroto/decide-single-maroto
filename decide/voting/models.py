@@ -10,10 +10,14 @@ from base.models import Auth, Key
 class Question(models.Model):
     desc = models.TextField()
 
+    cattegory = models.CharField(max_length=8,choices=[('YES/NO','yes/no'),('OPTIONS','options')],default="")
     def __str__(self):
         return self.desc
 
 
+
+
+    
 class QuestionOption(models.Model):
     question = models.ForeignKey(Question, related_name='options', on_delete=models.CASCADE)
     number = models.PositiveIntegerField(blank=True, null=True)
@@ -26,6 +30,8 @@ class QuestionOption(models.Model):
 
     def __str__(self):
         return '{} ({})'.format(self.option, self.number)
+
+
 
 
 class Voting(models.Model):
@@ -49,7 +55,17 @@ class Voting(models.Model):
     def create_pubkey(self):
         if self.pub_key or not self.auths.count():
             return
-
+        
+        if self.question.cattegory == "YES/NO":
+            if self.question.options.all().count() != 0:
+                for opt in self.question.options.all():
+                    opt.delete()
+            
+            option1 = QuestionOption(question = self.question, option = "Yes", number = 1)
+            option1.save()
+            option2 = QuestionOption(question = self.question, option = "No", number = 2)
+            option2.save()
+        
         auth = self.auths.first()
         data = {
             "voting": self.id,
