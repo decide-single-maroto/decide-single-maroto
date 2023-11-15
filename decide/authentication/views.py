@@ -10,11 +10,46 @@ from django.contrib.auth.models import User
 from django.shortcuts import render
 
 from django.db import IntegrityError
+from django.shortcuts import get_object_or_404, render,redirect
 from django.contrib.auth.forms import UserCreationForm
-from django.shortcuts import get_object_or_404
 from django.core.exceptions import ObjectDoesNotExist
+from django.contrib.auth.views import LoginView
+from django.views.generic import TemplateView
+from django.contrib.auth import authenticate, login
+
+from .forms import LoginForm
 
 from .serializers import UserSerializer
+
+class SigninView(TemplateView):
+    def post(self, request):
+        form_class = LoginForm(request.POST)
+
+        if form_class.is_valid():
+            username = form_class.cleaned_data.get('username')
+            password = form_class.cleaned_data.get('password')
+            
+            user = authenticate(request, username=username, password=password)
+            if user is not None:
+                login(request, user)
+                return redirect("menuSignin")
+            else:
+                error_message="Usuario y/o contraseña incorrecto/a"
+        else:
+            error_message = "Error al cargar el formulario"
+
+        return render(request, 'login.html', {'form': form_class, 'msg': error_message})
+    
+    def get(self, request):
+        form_class = LoginForm(None)
+        return render(request, 'login.html', {'form': form_class, 'msg': None})
+    
+class MenuView(TemplateView):
+    def post(self, request):
+        return render(request, 'menu.html')
+    
+    def get_template_names(self):
+        return ['menu.html']
 
 
 class GetUserView(APIView):
