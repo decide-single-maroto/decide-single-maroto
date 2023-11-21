@@ -1,14 +1,19 @@
 import django_filters.rest_framework
 from django.conf import settings
 from django.utils import timezone
-from django.shortcuts import get_object_or_404
+from django.http import HttpResponseForbidden
+from django.template import loader
+from django.shortcuts import get_object_or_404, render, redirect
 from rest_framework import generics, status
 from rest_framework.response import Response
 
 from .models import Question, QuestionOption, Voting
 from .serializers import SimpleVotingSerializer, VotingSerializer
 from base.perms import UserIsStaff
+
 from base.models import Auth
+
+from .forms import NewVotingForm
 
 
 class VotingView(generics.ListCreateAPIView):
@@ -103,3 +108,26 @@ class VotingUpdate(generics.RetrieveUpdateDestroyAPIView):
             msg = 'Action not found, try with start, stop or tally'
             st = status.HTTP_400_BAD_REQUEST
         return Response(msg, status=st)
+
+def newVoting(request):
+    form = NewVotingForm()
+    if not request.user.is_staff:
+        template = loader.get_template('voting/403.html')
+        return HttpResponseForbidden(template.render({}, request))
+    
+    if request.method == 'POST':
+        form = NewVotingForm(request.POST, request.FILES)
+
+        if form.is_valid():
+            item=form.save(commit=False)
+            item.save()
+
+            return redirect('/base')
+        else:
+            form = NewVotingForm()
+
+    return render(request, 'form.html', {
+        'form': form,
+        'title': 'Nueva Votación',
+    })
+    
