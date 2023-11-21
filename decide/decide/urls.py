@@ -16,6 +16,7 @@ Including another URLconf
 from django.conf import settings
 from django.contrib import admin
 from django.urls import path, include
+from authentication.views import SigninView
 from rest_framework_swagger.views import get_swagger_view
 
 
@@ -25,6 +26,7 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('doc/', schema_view),
     path('gateway/', include('gateway.urls')),
+    path('', SigninView.as_view(), name='signin')
 ]
 
 for module in settings.MODULES:

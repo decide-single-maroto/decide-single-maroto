@@ -1,3 +1,6 @@
+{% extends "base.html" %}
+
+{% block content %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -6,8 +9,10 @@
     <title>Sesión Iniciada</title>
 </head>
 <body>
-    <h1>Bienvenido</h1>
-        <p>¡Bienvenido {{ user.username }}!</p>
+    <div class="container mt-5">
+    <h1>¡Bienvenido {{ user.username }}!</h1>
         <p>Correo electrónico: {{ user.email }}</p>
+    </div>
 </body>
 </html>
+{% endblock %}
