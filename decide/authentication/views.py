@@ -7,15 +7,15 @@ from rest_framework.status import (
 from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import User
+from django.shortcuts import render
 
 from django.db import IntegrityError
-from django.shortcuts import get_object_or_404, render, redirect
+from django.shortcuts import get_object_or_404, render,redirect
 from django.contrib.auth.forms import UserCreationForm
 from django.core.exceptions import ObjectDoesNotExist
 from django.contrib.auth.views import LoginView
-from django.views.generic import TemplateView
-from django.contrib.auth import authenticate, login
-from django.urls import reverse
+from django.views.generic import TemplateView, View
+from django.contrib.auth import authenticate, login, logout
 
 from .forms import LoginForm
 
@@ -32,9 +32,7 @@ class SigninView(TemplateView):
             user = authenticate(request, username=username, password=password)
             if user is not None:
                 login(request, user)
-                print("He llegado a aquí")
-                menu_signin_url = reverse('menuSignin')
-                return redirect(menu_signin_url)
+                return redirect("menuSignin")
             else:
                 error_message="Usuario y/o contraseña incorrecto/a"
         else:
@@ -45,6 +43,14 @@ class SigninView(TemplateView):
     def get(self, request):
         form_class = LoginForm(None)
         return render(request, 'login.html', {'form': form_class, 'msg': None})
+    
+class MenuView(TemplateView):
+    def post(self, request):
+        return render(request, 'menu.html')
+    
+    def get_template_names(self):
+        return ['menu.html']
+
 
 class GetUserView(APIView):
     def post(self, request):
@@ -53,20 +59,13 @@ class GetUserView(APIView):
         return Response(UserSerializer(tk.user, many=False).data)
 
 
-class LogoutView(APIView):
-    def post(self, request):
-        key = request.data.get('token', '')
-        try:
-            tk = Token.objects.get(key=key)
-            tk.delete()
-        except ObjectDoesNotExist:
-            pass
-
-        return Response({})
-
+class LogoutView(View):
+    def get(self, request):
+        if request.user.is_authenticated:
+            logout(request)
+        return redirect('/')
 
 class RegisterView(APIView):
-
     def get(self, request):
         
         return render(request, 'register.html')
