@@ -6,6 +6,10 @@ on:
       - develop
       - master
       - github-actions
+  workflow_call:
+    secrets:
+      CODACY_PROJECT_TOKEN:
+        required: true
 
 jobs:
   build:
