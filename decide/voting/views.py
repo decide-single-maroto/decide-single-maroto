@@ -112,7 +112,7 @@ class VotingUpdate(generics.RetrieveUpdateDestroyAPIView):
 def newVoting(request):
     form = NewVotingForm()
     if not request.user.is_staff:
-        template = loader.get_template('voting/403.html')
+        template = loader.get_template('403.html')
         return HttpResponseForbidden(template.render({}, request))
     
     if request.method == 'POST':
