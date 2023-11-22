@@ -1,0 +1,95 @@
+
+    <body>
+        <form method="post" action="">
+            <div id=options-container>
+
+            {% csrf_token %}
+
+            {{ form.as_p }}
+            {{ form.options.as_table }}
+            </div>
+            <button type="submit">Guardar pregunta</button>
+        </form>
+
+
+
+<button type="button" onclick="addOptions()">añadir opcion</button>
+</body>
+<script>
+    var newIndex = 2;
+    function addOptions() {
+        // Obtén el contenedor de opciones
+        var optionsContainer = document.getElementById("options-container");
+     
+        console.log(newIndex);
+        // Crea un nuevo conjunto de elementos para las opciones
+
+        var newNumberLabel = document.createElement("label");
+        var newNumberInput = document.createElement("input");
+        var newOptionLabel = document.createElement("label");
+        var newOptionTextarea = document.createElement("textarea");
+        var newDeleteLabel = document.createElement("label");
+        var newDeleteCheckbox = document.createElement("input");
+        var newIdInput = document.createElement("input");
+        var newQuestionInput = document.createElement("input");
+
+        // Configura los atributos y propiedades necesarios
+
+
+        newNumberLabel.setAttribute("for", "id_options-" + newIndex + "-number");
+        newNumberLabel.textContent = "Number:";
+        newNumberInput.type = "number";
+        newNumberInput.name = "options-" + newIndex + "-number";
+        newNumberInput.min = "0";
+        newNumberInput.id = "id_options-" + newIndex + "-number";
+
+        newOptionLabel.setAttribute("for", "id_options-" + newIndex + "-option");
+        newOptionLabel.textContent = "Option:";
+        newOptionTextarea.name = "options-" + newIndex + "-option";
+        newOptionTextarea.cols = "40";
+        newOptionTextarea.rows = "10";
+        newOptionTextarea.id = "id_options-" + newIndex + "-option";
+
+        newDeleteLabel.setAttribute("for", "id_options-" + newIndex + "-DELETE");
+        newDeleteLabel.textContent = "Delete:";
+        newDeleteCheckbox.type = "checkbox";
+        newDeleteCheckbox.name = "options-" + newIndex + "-DELETE";
+        newDeleteCheckbox.id = "id_options-" + newIndex + "-DELETE";
+
+        newIdInput.type = "hidden";
+        newIdInput.name = "options-" + newIndex + "-id";
+        newIdInput.id = "id_options-" + newIndex + "-id";
+
+        newQuestionInput.type = "hidden";
+        newQuestionInput.name = "options-" + newIndex + "-question";
+        newQuestionInput.id = "id_options-" + newIndex + "-question";
+
+        // Agrega los nuevos elementos al contenedor
+        optionsContainer.appendChild(newNumberLabel);
+        optionsContainer.appendChild(newNumberInput);
+        optionsContainer.appendChild(newOptionLabel);
+        optionsContainer.appendChild(newOptionTextarea);
+        optionsContainer.appendChild(newDeleteLabel);
+        optionsContainer.appendChild(newDeleteCheckbox);
+        optionsContainer.appendChild(newIdInput);
+        optionsContainer.appendChild(newQuestionInput);
+
+
+
+        newIndex = newIndex + 1;
+
+        // Obtén el contenedor de la tabla
+        var optionsTable = document.getElementById("options-table");
+
+        // Crea un nuevo conjunto de filas para las opciones
+        nuevoIndex = parseInt(document.getElementById("id_options-TOTAL_FORMS").value);
+
+        // Actualiza el valor de MAX_NUM_FORMS dinámicamente
+        var maxNumFormsInput = document.getElementById("id_options-MAX_NUM_FORMS");
+        maxNumFormsInput.value = 100;
+        console.log(maxNumFormsInput)
+        document.getElementById("id_options-TOTAL_FORMS").value = nuevoIndex + 1;
+        console.log(document.getElementById("id_options-TOTAL_FORMS"))
+
+    }
+</script>

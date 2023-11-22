@@ -1,14 +1,18 @@
 import django_filters.rest_framework
 from django.conf import settings
 from django.utils import timezone
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404,render,redirect
 from rest_framework import generics, status
 from rest_framework.response import Response
+
 
 from .models import Question, QuestionOption, Voting
 from .serializers import SimpleVotingSerializer, VotingSerializer
 from base.perms import UserIsStaff
 from base.models import Auth
+from .forms import *
+from django.views import View
+
 
 
 class VotingView(generics.ListCreateAPIView):
@@ -103,3 +107,18 @@ class VotingUpdate(generics.RetrieveUpdateDestroyAPIView):
             msg = 'Action not found, try with start, stop or tally'
             st = status.HTTP_400_BAD_REQUEST
         return Response(msg, status=st)
+
+def QuestionCreateView(request):
+    if request.method == 'POST':
+        form = QuestionForm(request.POST)
+        if form.is_valid():
+            question = form.save()
+            options_formset = QuestionOptionFormSet(request.POST, instance=question)
+            print(options_formset)
+            if options_formset.is_valid():
+                options_formset.save()
+                return redirect('/base/')  # Ajusta la vista de redirección
+    else:
+        form = QuestionForm()
+
+    return render(request, 'question_create.html', {'form': form})
