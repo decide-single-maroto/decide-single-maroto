@@ -1,26 +1,43 @@
+{% extends 'base.html' %}
 
-    <body>
+{% block content %}
+
+<body>
+    <h1 class="mb-6 text-3xl" style="max-width: 100%; margin-left: 403px;"> {{ title }}</h1>
+    <div class="container mt-5">
         <form method="post" action="">
-            <div id=options-container>
+            <div class='space-y-4' id=options-container>
 
-            {% csrf_token %}
+                {% csrf_token %}
 
-            {{ form.as_p }}
-            {{ form.options.as_table }}
+                {{ form.as_p }}
+                {{ form.options.as_table }}
+                {% for field in form.visible_fields %}
+                    {% if field.errors %}
+                        <div class="alert alert-danger">
+                            {% for error in field.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
             </div>
-            <button type="submit">Guardar pregunta</button>
+            <button class="mt-6 py-3 px-6 text-lg bg-blue-500 hover:bg-teal-700 rounded-xl text-black"
+                type="submit">Guardar pregunta</button>
         </form>
+    
 
+    <button class="mt-6 py-3 px-6 text-lg bg-blue-500 hover:bg-teal-700 rounded-xl text-black" type="button"
+        onclick="addOptions()">añadir opcion</button>
+    </div>
 
-
-<button type="button" onclick="addOptions()">añadir opcion</button>
 </body>
 <script>
-    var newIndex = 2;
+    var newIndex = 1;
     function addOptions() {
         // Obtén el contenedor de opciones
         var optionsContainer = document.getElementById("options-container");
-     
+
         console.log(newIndex);
         // Crea un nuevo conjunto de elementos para las opciones
 
@@ -65,6 +82,7 @@
         newQuestionInput.id = "id_options-" + newIndex + "-question";
 
         // Agrega los nuevos elementos al contenedor
+        optionsContainer.appendChild(document.createElement("br"))
         optionsContainer.appendChild(newNumberLabel);
         optionsContainer.appendChild(newNumberInput);
         optionsContainer.appendChild(newOptionLabel);
@@ -87,9 +105,25 @@
         // Actualiza el valor de MAX_NUM_FORMS dinámicamente
         var maxNumFormsInput = document.getElementById("id_options-MAX_NUM_FORMS");
         maxNumFormsInput.value = 100;
-        console.log(maxNumFormsInput)
+
         document.getElementById("id_options-TOTAL_FORMS").value = nuevoIndex + 1;
-        console.log(document.getElementById("id_options-TOTAL_FORMS"))
+
 
     }
 </script>
+<style>
+    /* Estilos específicos del formulario */
+    form textarea,
+    form select {
+        width: 100%;
+        /* Ajusta el ancho según tus necesidades */
+        padding: 10px;
+        margin-bottom: 10px;
+        box-sizing: border-box;
+        border: 2px solid #ddd;
+        /* Color del borde */
+        border-radius: 8px;
+        /* Radio del borde para que sea redondeado */
+    }
+</style>
+{% endblock %}

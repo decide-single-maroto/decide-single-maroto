@@ -12,6 +12,9 @@ from base.perms import UserIsStaff
 from base.models import Auth
 from .forms import *
 from django.views import View
+from django.template import loader
+from django.http import HttpResponseForbidden
+
 
 
 
@@ -108,7 +111,11 @@ class VotingUpdate(generics.RetrieveUpdateDestroyAPIView):
             st = status.HTTP_400_BAD_REQUEST
         return Response(msg, status=st)
 
+
 def QuestionCreateView(request):
+    if not request.user.is_staff:
+        template = loader.get_template('403.html')
+        return HttpResponseForbidden(template.render({}, request))
     if request.method == 'POST':
         form = QuestionForm(request.POST)
         if form.is_valid():
@@ -117,7 +124,7 @@ def QuestionCreateView(request):
             print(options_formset)
             if options_formset.is_valid():
                 options_formset.save()
-                return redirect('/base/')  # Ajusta la vista de redirección
+                return redirect('/base/')
     else:
         form = QuestionForm()
 

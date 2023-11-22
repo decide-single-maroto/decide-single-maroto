@@ -6,7 +6,7 @@ class QuestionOptionForm(forms.ModelForm):
         model = QuestionOption
         fields = ['number','option']
 
-QuestionOptionFormSet = forms.inlineformset_factory(Question, QuestionOption, form=QuestionOptionForm, extra=2, can_delete=True)
+QuestionOptionFormSet = forms.inlineformset_factory(Question, QuestionOption, form=QuestionOptionForm, extra=1, can_delete=True)
 
 class QuestionForm(forms.ModelForm):
     class Meta:
