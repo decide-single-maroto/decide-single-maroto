@@ -6,4 +6,5 @@ urlpatterns = [
     path('', views.CensusCreate.as_view(), name='census_create'),
     path('<int:voting_id>/', views.CensusDetail.as_view(), name='census_detail'),
     path('export/', views.export_census, name='export_census'), # Adding the URL for exporting the census
+    path('new/', views.new_census_form, name = 'new_census')
 ]

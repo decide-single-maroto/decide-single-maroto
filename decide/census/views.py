@@ -2,6 +2,8 @@ from django.db.utils import IntegrityError
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import generics
 from rest_framework.response import Response
+from django.shortcuts import  render, redirect
+from django.http import HttpResponseForbidden
 from rest_framework.status import (
         HTTP_201_CREATED as ST_201,
         HTTP_204_NO_CONTENT as ST_204,
@@ -14,6 +16,8 @@ from base.perms import UserIsStaff
 from .models import Census
 import csv
 from django.http import HttpResponse
+from .forms import NewCensusForm
+from django.template import loader
 
 # Function to export the census to a CSV file
 def export_census(request):
@@ -69,3 +73,26 @@ class CensusDetail(generics.RetrieveDestroyAPIView):
         except ObjectDoesNotExist:
             return Response('Invalid voter', status=ST_401)
         return Response('Valid voter')
+
+
+def new_census_form(request):
+    form = NewCensusForm()
+    if not request.user.is_staff:
+        template = loader.get_template('/voting/403.html')
+        return HttpResponseForbidden(template.render({}, request))
+
+    if request.method == 'POST':
+        form = NewCensusForm(request.POST, request.FILES)
+
+        if form.is_valid():
+            item=form.save(commit=False)
+            item.save()
+
+            return redirect('/base')
+        else:
+            form = NewCensusForm()
+
+    return render(request, 'form.html', {
+        'form': form,
+        'title': 'Nuevo Censo',
+    })
