@@ -2,6 +2,7 @@ from django.contrib.auth.models import User
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.test import RequestFactory, TestCase
 from django.http import HttpResponse
+from django.http import HttpResponseBadRequest
 
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
@@ -9,10 +10,13 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 
+import json
+
 from .models import Census
 from base.tests import BaseTestCase
 from datetime import datetime
 from .admin import CensusAdmin, VotingIdFilter
+from .views import export_census
 
 
 class CensusTestCase(BaseTestCase):
@@ -218,24 +222,64 @@ class CensusAdminExportSelectedTestCase(TestCase):
         self.census2 = Census.objects.create(voting_id=2, voter_id=2)
 
     def test_export_selected(self):
-    # Create a request with an authenticated user
         request = self.factory.post('/admin/census/census/', {'action': 'export_selected', '_selected_action': [self.census1.id, self.census2.id]})
         request.user = self.user
 
-    # Get the queryset for the selected items
         queryset = Census.objects.filter(id__in=[self.census1.id, self.census2.id])
 
-    # Call the export_selected action
         response = CensusAdmin.export_selected(modeladmin=None, request=request, queryset=queryset)
 
-    # Ensure the response is of type HttpResponse
         self.assertIsInstance(response, HttpResponse)
 
-    # Ensure the CSV file is properly formatted
         lines = response.getvalue().decode().split('\n')
-    # Comparar la primera línea sin el carácter de retorno de carro
         self.assertEqual(lines[0].strip(), 'Voting ID,Voter ID')
-    # Comparar las líneas del archivo CSV, eliminando cualquier carácter de retorno de carro
         self.assertEqual(lines[1].strip(), '1,1')
         self.assertEqual(lines[2].strip(), '2,2')
 
+class CensusExportTestCase(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.user = User.objects.create_user(username='testuser', password='testpassword')
+        self.census1 = Census.objects.create(voting_id=1, voter_id=1)
+        self.census2 = Census.objects.create(voting_id=2, voter_id=2)
+
+    def test_export_census(self):
+        request = self.factory.get('/export_census/', {'ids': f'{self.census1.id},{self.census2.id}'})
+        request.user = self.user
+
+        response = export_census(request)
+
+        self.assertIsInstance(response, HttpResponse)
+        self.assertEqual(response.get('Content-Type'), 'text/csv')
+        self.assertEqual(response.get('Content-Disposition'), 'attachment; filename="census_export.csv"')
+
+        lines = response.getvalue().decode().split('\n')
+        self.assertEqual(lines[0].strip(), 'Voting ID,Voter ID')
+        self.assertEqual(lines[1].strip(), '1,1')
+        self.assertEqual(lines[2].strip(), '2,2')
+
+    def test_export_census_empty(self):
+        request = self.factory.get('/export_census/', {'ids': ''})
+        request.user = self.user
+
+        response = export_census(request)
+
+        self.assertIsInstance(response, HttpResponse)
+        self.assertEqual(response.get('Content-Type'), 'text/csv')
+        self.assertEqual(response.get('Content-Disposition'), 'attachment; filename="census_export.csv"')
+
+        # Verify that the CSV file is empty
+        self.assertEqual(response.getvalue().decode().strip(), 'Voting ID,Voter ID')
+
+    def test_export_census_invalid_id(self):
+        request = self.factory.get('/export_census/', {'ids': 'invalid_id'})
+        request.user = self.user
+
+        response = export_census(request)
+
+        self.assertIsInstance(response, HttpResponseBadRequest)
+        self.assertEqual(response.get('Content-Type'), 'application/json')
+
+        # Verificar el contenido JSON
+        content = json.loads(response.content.decode())
+        self.assertEqual(content['error'], 'Invalid IDs provided')
