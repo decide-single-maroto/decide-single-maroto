@@ -1,8 +1,7 @@
-import random
 from django.contrib.auth.models import User
-from django.test import TestCase
-from rest_framework.test import APIClient
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
+from django.test import RequestFactory, TestCase
+from django.http import HttpResponse
 
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
@@ -11,9 +10,9 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 
 from .models import Census
-from base import mods
 from base.tests import BaseTestCase
 from datetime import datetime
+from .admin import CensusAdmin, VotingIdFilter
 
 
 class CensusTestCase(BaseTestCase):
@@ -164,3 +163,79 @@ class CensusTest(StaticLiveServerTestCase):
 
         self.assertTrue(self.cleaner.find_element_by_xpath('/html/body/div/div[3]/div/div[1]/div/form/div/p').text == 'Please correct the errors below.')
         self.assertTrue(self.cleaner.current_url == self.live_server_url+"/admin/census/census/add")
+
+class VotingIdFilterTestCase(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.census1 = Census.objects.create(voting_id=1, voter_id=1)
+        self.census2 = Census.objects.create(voting_id=2, voter_id=2)
+
+    def test_lookups(self):
+        filter_instance = VotingIdFilter(
+            request=self.factory.get('/admin/census/census/'),
+            params={'voting_id': '1'},
+            model=Census,
+            model_admin=None
+        )
+        lookups = filter_instance.lookups(None, None)
+        # Verificar igualdad sin importar el orden
+        self.assertCountEqual(lookups, [(1, '1'), (2, '2')])
+
+    def test_queryset(self):
+        filter_instance = VotingIdFilter(
+            request=self.factory.get('/admin/census/census/'),
+            params={'voting_id': '1'},
+            model=Census,
+            model_admin=None
+        )
+        queryset = filter_instance.queryset(None, Census.objects.all())
+        # Verificar si el elemento está presente en el conjunto de resultados
+        self.assertIn(repr(self.census1), [repr(item) for item in queryset])
+
+    def test_queryset_with_no_value(self):
+        filter_instance = VotingIdFilter(
+            request=self.factory.get('/admin/census/census/'),
+            params={'voting_id': None},  # Asegúrate de pasar None como valor
+            model=Census,
+            model_admin=None
+        )
+        queryset = filter_instance.queryset(None, Census.objects.all())
+        # Verificar si el queryset no es None y luego verificar la presencia de elementos
+        self.assertIsNotNone(queryset)
+        if queryset is not None:
+            self.assertIn(repr(self.census1), [repr(item) for item in queryset])
+            self.assertIn(repr(self.census2), [repr(item) for item in queryset])
+
+class CensusAdminExportSelectedTestCase(TestCase):
+
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.user = User.objects.create_user(username='admin', password='admin')
+        self.census_admin = CensusAdmin(Census, admin_site=None)
+
+        # Create some Census objects for testing
+        self.census1 = Census.objects.create(voting_id=1, voter_id=1)
+        self.census2 = Census.objects.create(voting_id=2, voter_id=2)
+
+    def test_export_selected(self):
+    # Create a request with an authenticated user
+        request = self.factory.post('/admin/census/census/', {'action': 'export_selected', '_selected_action': [self.census1.id, self.census2.id]})
+        request.user = self.user
+
+    # Get the queryset for the selected items
+        queryset = Census.objects.filter(id__in=[self.census1.id, self.census2.id])
+
+    # Call the export_selected action
+        response = CensusAdmin.export_selected(modeladmin=None, request=request, queryset=queryset)
+
+    # Ensure the response is of type HttpResponse
+        self.assertIsInstance(response, HttpResponse)
+
+    # Ensure the CSV file is properly formatted
+        lines = response.getvalue().decode().split('\n')
+    # Comparar la primera línea sin el carácter de retorno de carro
+        self.assertEqual(lines[0].strip(), 'Voting ID,Voter ID')
+    # Comparar las líneas del archivo CSV, eliminando cualquier carácter de retorno de carro
+        self.assertEqual(lines[1].strip(), '1,1')
+        self.assertEqual(lines[2].strip(), '2,2')
+
