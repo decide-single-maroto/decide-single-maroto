@@ -22,8 +22,14 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ml-auto"> 
                     {% if user.is_staff %}
-                    <div class="rounded-box">
-                        <a class="btn btn-dark" href="/voting/newVoting">Nueva Votación</a>
+                    <div class="dropdown">
+                        <button class="btn btn-secondary dropdown-toggle" type="button" id="votacionDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Votación
+                        </button>
+                        <div class="dropdown-menu" aria-labelledby="votacionDropdown">
+                            <a href="/voting/newVoting">Nueva Votación</a>
+                            <a href="/voting/allVotings/">Votaciones</a>
+                        </div>
                     </div>
                     {% endif %}
                     <li class="nav-item active">

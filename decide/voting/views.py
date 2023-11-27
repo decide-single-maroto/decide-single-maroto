@@ -109,7 +109,7 @@ class VotingUpdate(generics.RetrieveUpdateDestroyAPIView):
             st = status.HTTP_400_BAD_REQUEST
         return Response(msg, status=st)
 
-def newVoting(request):
+def new_voting(request):
     form = NewVotingForm()
     if not request.user.is_staff:
         template = loader.get_template('403.html')
@@ -122,7 +122,7 @@ def newVoting(request):
             item=form.save(commit=False)
             item.save()
 
-            return redirect('/base')
+            return redirect('/voting/allVotings')
         else:
             form = NewVotingForm()
 
@@ -130,4 +130,21 @@ def newVoting(request):
         'form': form,
         'title': 'Nueva Votación',
     })
+
+def all_votings(request):
+    if not request.user.is_staff:
+        template = loader.get_template('403.html')
+        return HttpResponseForbidden(template.render({}, request))
+    else:
+        votings = Voting.objects.all()
+        return render(request, 'allVotings.html', {'votings': votings, 'title': 'Votaciones',})
+    
+def votings_detail(request, voting_id):
+    if not request.user.is_staff:
+        template = loader.get_template('403.html')
+        return HttpResponseForbidden(template.render({}, request))
+    else:
+        voting = Voting.objects.get(pk=voting_id)
+        return render(request, 'votings_detail.html', {'voting': [voting], 'title': 'Votacion',})
+
     
