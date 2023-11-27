@@ -13,7 +13,7 @@ from base.perms import UserIsStaff
 
 from base.models import Auth
 
-from .forms import NewVotingForm
+from .forms import NewVotingForm, NewAuthForm
 
 
 class VotingView(generics.ListCreateAPIView):
@@ -146,5 +146,25 @@ def votings_detail(request, voting_id):
     else:
         voting = Voting.objects.get(pk=voting_id)
         return render(request, 'votings_detail.html', {'voting': [voting], 'title': 'Votacion',})
+    
 
+def new_auth(request):
+    if not request.user.is_staff:
+        template = loader.get_template('403.html')
+        return HttpResponseForbidden(template.render({}, request))
+    
+    if request.method == 'POST':
+        form = NewAuthForm(request.POST, request.FILES)
+
+        if form.is_valid():
+            item = form.save() 
+            return redirect('/base')
+
+    else:
+        form = NewAuthForm()
+
+    return render(request, 'authForm.html', {
+        'form': form,
+        'title': 'Nuevo Auth',
+    })
     
