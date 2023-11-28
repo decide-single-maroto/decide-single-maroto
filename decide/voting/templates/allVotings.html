@@ -15,7 +15,7 @@
             </thead>
             <tbody>
                 {% for voting in votings %}
-                    <tr data-href="{% url 'votings_detail' voting.id %}" style="cursor: pointer;">
+                    <tr>
                         <td>{{ voting.id }}</td>
                         <td>{{ voting.name }}</td>
                         <td>{{ voting.start_date }}</td>

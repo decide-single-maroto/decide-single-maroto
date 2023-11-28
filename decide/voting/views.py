@@ -117,14 +117,18 @@ def new_voting(request):
     
     if request.method == 'POST':
         form = NewVotingForm(request.POST, request.FILES)
+        print(form)
 
         if form.is_valid():
-            item=form.save(commit=False)
-            item.save()
+            voting_instance = form.save(commit=False)
+            voting_instance.save()
+
+            # Save the many-to-many field separately
+            form.save_m2m()
 
             return redirect('/voting/allVotings')
-        else:
-            form = NewVotingForm()
+    else:
+        form = NewVotingForm()
 
     return render(request, 'form.html', {
         'form': form,
@@ -155,6 +159,7 @@ def new_auth(request):
     
     if request.method == 'POST':
         form = NewAuthForm(request.POST, request.FILES)
+        print(form)
 
         if form.is_valid():
             item = form.save() 
@@ -167,4 +172,3 @@ def new_auth(request):
         'form': form,
         'title': 'Nuevo Auth',
     })
-    
