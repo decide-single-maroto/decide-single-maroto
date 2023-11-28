@@ -13,7 +13,7 @@ from base.perms import UserIsStaff
 
 from base.models import Auth
 
-from .forms import NewVotingForm, NewAuthForm
+from .forms import NewVotingForm, NewAuthForm, EditVotingForm
 
 
 class VotingView(generics.ListCreateAPIView):
@@ -123,7 +123,6 @@ def new_voting(request):
             voting_instance = form.save(commit=False)
             voting_instance.save()
 
-            # Save the many-to-many field separately
             form.save_m2m()
 
             return redirect('/voting/allVotings')
@@ -135,6 +134,33 @@ def new_voting(request):
         'title': 'Nueva Votación',
     })
 
+def edit_voting(request, voting_id):
+    voting=get_object_or_404(Voting, pk=voting_id)
+    print(voting)
+
+    if not request.user.is_staff:
+        template = loader.get_template('403.html')
+        return HttpResponseForbidden(template.render({}, request))
+
+    if request.method == 'POST':
+        form = EditVotingForm(request.POST, request.FILES, instance=voting)
+
+        if form.is_valid():
+
+            voting_instance = form.save(commit=False)
+            voting_instance.save()
+
+            form.save_m2m()
+
+            return redirect('/voting/allVotings')
+    else:
+        form = EditVotingForm(instance=voting)
+
+    return render(request, 'form.html', {
+        'form': form,
+        'title': 'Modificar Votación',
+    })
+
 def all_votings(request):
     if not request.user.is_staff:
         template = loader.get_template('403.html')
@@ -142,14 +168,6 @@ def all_votings(request):
     else:
         votings = Voting.objects.all()
         return render(request, 'allVotings.html', {'votings': votings, 'title': 'Votaciones',})
-    
-def votings_detail(request, voting_id):
-    if not request.user.is_staff:
-        template = loader.get_template('403.html')
-        return HttpResponseForbidden(template.render({}, request))
-    else:
-        voting = Voting.objects.get(pk=voting_id)
-        return render(request, 'votings_detail.html', {'voting': [voting], 'title': 'Votacion',})
     
 
 def new_auth(request):

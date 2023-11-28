@@ -15,7 +15,7 @@
             </thead>
             <tbody>
                 {% for voting in votings %}
-                    <tr>
+                    <tr data-href="{% url 'edit_voting_detail' voting_id=voting.id %}">
                         <td>{{ voting.id }}</td>
                         <td>{{ voting.name }}</td>
                         <td>{{ voting.start_date }}</td>

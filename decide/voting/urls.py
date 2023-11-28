@@ -8,4 +8,5 @@ urlpatterns = [
     path('<int:voting_id>/', views.VotingUpdate.as_view(), name='voting'),
     path('allVotings/', views.all_votings, name='allVotings'),
     path('newAuth/', views.new_auth, name = 'newAuth'),
+    path('<int:voting_id>/edit/', views.edit_voting, name='edit_voting_detail'),
 ]
