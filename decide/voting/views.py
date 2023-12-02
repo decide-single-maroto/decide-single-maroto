@@ -177,8 +177,6 @@ def new_auth(request):
     
     if request.method == 'POST':
         form = NewAuthForm(request.POST, request.FILES)
-        print(form)
-
         if form.is_valid():
             item = form.save() 
             return redirect('/base')
@@ -190,3 +188,31 @@ def new_auth(request):
         'form': form,
         'title': 'Nuevo Auth',
     })
+
+def start_voting(request):
+    if request.method == 'POST':
+        voting_id = request.POST.get('voting_id')
+        voting = get_object_or_404(Voting, pk=voting_id)        
+        voting.create_pubkey()
+        voting.start_date = timezone.now()
+        voting.save()
+
+    return redirect('/voting/allVotings')
+
+def stop_voting(request):
+    if request.method == 'POST':
+        voting_id = request.POST.get('voting_id')
+        voting = get_object_or_404(Voting, pk=voting_id)
+        voting.end_date = timezone.now()
+        voting.save()
+
+    return redirect('/voting/allVotings')
+
+def tally_voting(request):
+    if request.method == 'POST':
+        voting_id = request.POST.get('voting_id')
+        voting = get_object_or_404(Voting, pk=voting_id)
+        token = request.session.get('auth-token', '')
+        voting.tally_votes(token)
+    
+    return redirect('/voting/allVotings')

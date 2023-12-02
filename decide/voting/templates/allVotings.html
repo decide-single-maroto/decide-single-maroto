@@ -11,6 +11,7 @@
                     <th data-sortable="true">Start Date</th>
                     <th data-sortable="true">End Date</th>
                     <th data-sortable="true">Model</th>
+                    <th data-sortable="false">Actions</th>
                 </tr>
             </thead>
             <tbody>
@@ -21,9 +22,39 @@
                         <td>{{ voting.start_date }}</td>
                         <td>{{ voting.end_date }}</td>
                         <td>{{ voting.model }}</td>
+                        <td>
+                            {% if voting.start_date == None %}
+                                <form action="{% url 'start_voting' %}" method="post" class="voting-action-form">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="voting_id" value="{{ voting.id }}">
+                                    <button type="submit" class="btn btn-success">Start</button>
+                                </form>
+                            {% endif %}
+            
+                            {% if voting.start_date != None and voting.end_date == None %}
+                                <form action="{% url 'stop_voting' %}" method="post" class="voting-action-form">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="voting_id" value="{{ voting.id }}">
+                                    <button type="submit" class="btn btn-danger">Stop</button>
+                                </form>
+                            {% endif %}
+
+                            {% if voting.postproc == None and voting.start_date != None and voting.end_date != None %}
+                                <form action="{% url 'tally_voting' %}" method="post" class="voting-action-form">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="voting_id" value="{{ voting.id }}">
+                                    <button type="submit" class="btn btn-warning">Tally</button>
+                                </form>
+                            {% endif %}
+
+                            {% if voting.postproc != None %}
+                                <p> No more actions</p>
+                            {% endif %}
+                        </td>
                     </tr>
                 {% endfor %}
             </tbody>
+            
         </table>
     </div>
 
@@ -32,17 +63,36 @@
 
     <script>
         $(document).ready(function() {
-            var table = $('#votings-table').DataTable({
-                "order": [[0, "desc"]]
-            });
-
-            // Agregar evento de clic a las filas
-            $('#votings-table tbody').on('click', 'tr', function() {
-                var url = $(this).data('href');
-                if (url) {
-                    window.location.href = url;
-                }
-            });
+        // Agregar evento de clic a las filas
+        $('#votings-table tbody').on('click', 'tr', function() {
+            var url = $(this).data('href');
+            if (url) {
+                window.location.href = url;
+            }
         });
+
+        // Inicializar DataTables con opciones adicionales
+        var table = $('#votings-table').DataTable({
+            "order": [[0, "desc"]],
+            "deferRender": true,
+            "orderCellsTop": true,
+            "createdRow": function(row, data, dataIndex) {
+                // Agregar clases a las filas según el estado de start_date
+                if (data[2] == null) {
+                    $(row).addClass('not-started');
+                } else {
+                    $(row).addClass('started');
+                }
+            },
+        });
+        
+        // Aplicar DataTables a las nuevas filas después de las acciones
+        $('.voting-action-form').on('submit', function() {
+            table.rows().invalidate().draw();
+        });
+    });
+
+
     </script>
+    
 {% endblock %}
