@@ -1,8 +1,8 @@
-import random
 from django.contrib.auth.models import User
-from django.test import TestCase
-from rest_framework.test import APIClient
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
+from django.test import RequestFactory, TestCase
+from django.http import HttpResponse
+from django.http import HttpResponseBadRequest
 
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
@@ -10,10 +10,13 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 
+import json
+
 from .models import Census
-from base import mods
 from base.tests import BaseTestCase
 from datetime import datetime
+from .admin import CensusAdmin, VotingIdFilter
+from .views import export_census
 
 
 class CensusTestCase(BaseTestCase):
@@ -164,3 +167,119 @@ class CensusTest(StaticLiveServerTestCase):
 
         self.assertTrue(self.cleaner.find_element_by_xpath('/html/body/div/div[3]/div/div[1]/div/form/div/p').text == 'Please correct the errors below.')
         self.assertTrue(self.cleaner.current_url == self.live_server_url+"/admin/census/census/add")
+
+class VotingIdFilterTestCase(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.census1 = Census.objects.create(voting_id=1, voter_id=1)
+        self.census2 = Census.objects.create(voting_id=2, voter_id=2)
+
+    def test_lookups(self):
+        filter_instance = VotingIdFilter(
+            request=self.factory.get('/admin/census/census/'),
+            params={'voting_id': '1'},
+            model=Census,
+            model_admin=None
+        )
+        lookups = filter_instance.lookups(None, None)
+        # Verificar igualdad sin importar el orden
+        self.assertCountEqual(lookups, [(1, '1'), (2, '2')])
+
+    def test_queryset(self):
+        filter_instance = VotingIdFilter(
+            request=self.factory.get('/admin/census/census/'),
+            params={'voting_id': '1'},
+            model=Census,
+            model_admin=None
+        )
+        queryset = filter_instance.queryset(None, Census.objects.all())
+        # Verificar si el elemento está presente en el conjunto de resultados
+        self.assertIn(repr(self.census1), [repr(item) for item in queryset])
+
+    def test_queryset_with_no_value(self):
+        filter_instance = VotingIdFilter(
+            request=self.factory.get('/admin/census/census/'),
+            params={'voting_id': None},  # Asegúrate de pasar None como valor
+            model=Census,
+            model_admin=None
+        )
+        queryset = filter_instance.queryset(None, Census.objects.all())
+        # Verificar si el queryset no es None y luego verificar la presencia de elementos
+        self.assertIsNotNone(queryset)
+        if queryset is not None:
+            self.assertIn(repr(self.census1), [repr(item) for item in queryset])
+            self.assertIn(repr(self.census2), [repr(item) for item in queryset])
+
+class CensusAdminExportSelectedTestCase(TestCase):
+
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.user = User.objects.create_user(username='admin', password='admin')
+        self.census_admin = CensusAdmin(Census, admin_site=None)
+
+        # Create some Census objects for testing
+        self.census1 = Census.objects.create(voting_id=1, voter_id=1)
+        self.census2 = Census.objects.create(voting_id=2, voter_id=2)
+
+    def test_export_selected(self):
+        request = self.factory.post('/admin/census/census/', {'action': 'export_selected', '_selected_action': [self.census1.id, self.census2.id]})
+        request.user = self.user
+
+        queryset = Census.objects.filter(id__in=[self.census1.id, self.census2.id])
+
+        response = CensusAdmin.export_selected(modeladmin=None, request=request, queryset=queryset)
+
+        self.assertIsInstance(response, HttpResponse)
+
+        lines = response.getvalue().decode().split('\n')
+        self.assertEqual(lines[0].strip(), 'Voting ID,Voter ID')
+        self.assertEqual(lines[1].strip(), '1,1')
+        self.assertEqual(lines[2].strip(), '2,2')
+
+class CensusExportTestCase(TestCase):
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.user = User.objects.create_user(username='testuser', password='testpassword')
+        self.census1 = Census.objects.create(voting_id=1, voter_id=1)
+        self.census2 = Census.objects.create(voting_id=2, voter_id=2)
+
+    def test_export_census(self):
+        request = self.factory.get('/export_census/', {'ids': f'{self.census1.id},{self.census2.id}'})
+        request.user = self.user
+
+        response = export_census(request)
+
+        self.assertIsInstance(response, HttpResponse)
+        self.assertEqual(response.get('Content-Type'), 'text/csv')
+        self.assertEqual(response.get('Content-Disposition'), 'attachment; filename="census_export.csv"')
+
+        lines = response.getvalue().decode().split('\n')
+        self.assertEqual(lines[0].strip(), 'Voting ID,Voter ID')
+        self.assertEqual(lines[1].strip(), '1,1')
+        self.assertEqual(lines[2].strip(), '2,2')
+
+    def test_export_census_empty(self):
+        request = self.factory.get('/export_census/', {'ids': ''})
+        request.user = self.user
+
+        response = export_census(request)
+
+        self.assertIsInstance(response, HttpResponse)
+        self.assertEqual(response.get('Content-Type'), 'text/csv')
+        self.assertEqual(response.get('Content-Disposition'), 'attachment; filename="census_export.csv"')
+
+        # Verify that the CSV file is empty
+        self.assertEqual(response.getvalue().decode().strip(), 'Voting ID,Voter ID')
+
+    def test_export_census_invalid_id(self):
+        request = self.factory.get('/export_census/', {'ids': 'invalid_id'})
+        request.user = self.user
+
+        response = export_census(request)
+
+        self.assertIsInstance(response, HttpResponseBadRequest)
+        self.assertEqual(response.get('Content-Type'), 'application/json')
+
+        # Verificar el contenido JSON
+        content = json.loads(response.content.decode())
+        self.assertEqual(content['error'], 'Invalid IDs provided')
