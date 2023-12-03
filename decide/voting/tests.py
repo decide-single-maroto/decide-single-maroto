@@ -60,12 +60,12 @@ class VotingTestCase(BaseTestCase):
         self.assertEquals(str(v.question.options.all()[0]),"option 1 (2)")
 
     def setUp(self):
-        question = Question.objects.create(id = 10, desc = 'Eres humano?', cattegory = "YES/NO")
+        question = Question.objects.create(id = 100, desc = 'Eres humano?', cattegory = "YES/NO")
         question.save()
         
         
         
-        voting = Voting(id = 10,name='test voting', question=question)
+        voting = Voting(id = 100,name='test voting', question=question)
         voting.save()
         self.voting = voting
         super().setUp()
@@ -383,15 +383,15 @@ class QuestionsTests(StaticLiveServerTestCase):
         options.headless = True
         self.driver = webdriver.Chrome(options=options)
 
-        question = Question.objects.create(id = 10, desc = 'Eres humano?', cattegory = 'YES/NO')
+        question = Question.objects.create(id = 100, desc = 'Eres humano?', cattegory = 'YES/NO')
         question.save()
         
-        voting = Voting(id = 10,name='test voting', question=question)
+        voting = Voting(id = 100,name='test voting', question=question)
         voting.save()
 
         
         super().setUp()
-        self.voting = Voting.objects.get(id = 10)
+        self.voting = Voting.objects.get(id = 100)
 
     def tearDown(self):
         super().tearDown()
@@ -401,9 +401,9 @@ class QuestionsTests(StaticLiveServerTestCase):
 
     def test_create_yes_no_question(self):
 
-        question_saved = Question.objects.get(id = 10)
+        question_saved = Question.objects.get(id = 100)
         self.assertEqual(question_saved.desc, 'Eres humano?')
-        self.assertEqual(question_saved.id, 10)
+        self.assertEqual(question_saved.id, 100)
         self.assertEqual(question_saved.cattegory, 'YES/NO')
         
     
