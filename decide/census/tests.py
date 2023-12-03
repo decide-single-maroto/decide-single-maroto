@@ -14,7 +14,11 @@ from .models import Census
 from base import mods
 from base.tests import BaseTestCase
 from datetime import datetime
+from django.contrib.auth import get_user_model
+from django.test import Client
+from django.urls import reverse
 
+from .forms import NewCensusForm
 
 class CensusTestCase(BaseTestCase):
 
@@ -164,3 +168,54 @@ class CensusTest(StaticLiveServerTestCase):
 
         self.assertTrue(self.cleaner.find_element_by_xpath('/html/body/div/div[3]/div/div[1]/div/form/div/p').text == 'Please correct the errors below.')
         self.assertTrue(self.cleaner.current_url == self.live_server_url+"/admin/census/census/add")
+
+class CensusFormTest(TestCase):
+    
+    def test_census_form_view(self):
+        self.client = Client()
+        self.user = get_user_model().objects.create_user(username = 'adminadmin', password='adminadmin', is_staff=True, is_superuser=True)
+        self.client.force_login(self.user)
+        
+        url = reverse('new_census')
+        response = self.client.get(url)
+        
+        self.assertTemplateUsed(response,'form.html')
+        self.assertContains(response,"voting_id")
+        
+    def test_census_form_no_admin(self):
+        url = reverse('new_census')
+        response = self.client.get(url)
+        
+        self.assertEqual(response.status_code,403)
+        
+    def test_census_create(self):
+        self.client = Client()
+        self.user = get_user_model().objects.create_user(username = 'adminadmin', password='adminadmin', is_staff=True, is_superuser=True)
+        self.client.force_login(self.user)
+        
+        url = reverse('new_census')
+        response = self.client.get(url)
+        form_data = {
+            'voting_id': 1,
+            'voter_id':1,
+        }
+        response_post = self.client.post(url, data=form_data)
+        self.assertEqual(response_post.status_code, 302)
+        
+        question = Census.objects.get(voting_id = 1)
+        self.assertEqual(question.voter_id,1)
+        
+    def test_census_create_with_errors(self):
+        self.client = Client()
+        self.user = get_user_model().objects.create_user(username = 'adminadmin', password='adminadmin', is_staff=True, is_superuser=True)
+        self.client.force_login(self.user)
+        
+        form_data = {
+            'voter_id': 1,
+        }
+        url = reverse('new_census')
+        
+        form = NewCensusForm(data={})
+
+        self.assertFalse(form.is_valid())
+        self.assertTrue('voting_id' in form.errors)
