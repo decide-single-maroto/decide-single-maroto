@@ -14,22 +14,26 @@
 <body>
     <header class="navbar navbar-expand-lg navbar-light bg-light">
         <div class="container">
-            <a class="navbar-brand" href="#">Decide</a>
+            <a class="navbar-brand" href="/base">Decide</a>
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
                 aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
-
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ml-auto">
+                <ul class="navbar-nav ml-auto"> 
                     {% if user.is_staff %}
-                    <div class="rounded-box">
-                        <a class="btn btn-dark" href="/voting/question/new">Nueva Pregunta</a>
+                    <div class="dropdown">
+                        <button class="btn btn-secondary dropdown-toggle" type="button" id="questionDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Preguntas
+                        </button>
+                        <div class="dropdown-menu" aria-labelledby="questionDropdown">
+                            <a href="/voting/question/new" class="dropdown-item mb-2">Nueva Pregunta</a>
+                            <a href="/voting/allQuestion/" class="dropdown-item mb-2">Preguntas</a>
+                        </div>
                     </div>
                     {% endif %}
                     <li class="nav-item active">
-                        <a class="nav-link" href="/authentication/logout">Log out <span
-                                class="sr-only">(current)</span></a>
+                        <a class="nav-link" href="/authentication/logout">Log out <span class="sr-only">(current)</span></a>
                     </li>
                     <li class="nav-item">
                         <a class="nav-link">{{ user.username }}</a>

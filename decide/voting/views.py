@@ -13,6 +13,7 @@ from base.models import Auth
 from .forms import *
 from django.views import View
 from django.template import loader
+from django.forms import inlineformset_factory
 from django.http import HttpResponseForbidden
 
 
@@ -129,3 +130,12 @@ def QuestionCreateView(request):
         form = QuestionForm()
 
     return render(request, 'question_create.html', {'form': form})
+
+def all_question(request):
+    if not request.user.is_staff:
+        template = loader.get_template('403.html')
+        return HttpResponseForbidden(template.render({}, request))
+    else:
+        questions = Question.objects.all()
+        return render(request, 'all_question.html', {'questions': questions, 'title': 'Preguntas',})
+    
