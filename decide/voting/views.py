@@ -110,14 +110,12 @@ class VotingUpdate(generics.RetrieveUpdateDestroyAPIView):
         return Response(msg, status=st)
 
 def new_voting(request):
-    form = NewVotingForm()
     if not request.user.is_staff:
         template = loader.get_template('403.html')
         return HttpResponseForbidden(template.render({}, request))
     
     if request.method == 'POST':
         form = NewVotingForm(request.POST, request.FILES)
-        print(form)
 
         if form.is_valid():
             voting_instance = form.save(commit=False)
@@ -136,7 +134,6 @@ def new_voting(request):
 
 def edit_voting(request, voting_id):
     voting=get_object_or_404(Voting, pk=voting_id)
-    print(voting)
 
     if not request.user.is_staff:
         template = loader.get_template('403.html')
@@ -190,29 +187,41 @@ def new_auth(request):
     })
 
 def start_voting(request):
-    if request.method == 'POST':
-        voting_id = request.POST.get('voting_id')
-        voting = get_object_or_404(Voting, pk=voting_id)        
-        voting.create_pubkey()
-        voting.start_date = timezone.now()
-        voting.save()
+    if not request.user.is_staff:
+        template = loader.get_template('403.html')
+        return HttpResponseForbidden(template.render({}, request))
+    else:
+        if request.method == 'POST':
+            voting_id = request.POST.get('voting_id')
+            voting = get_object_or_404(Voting, pk=voting_id)        
+            voting.create_pubkey()
+            voting.start_date = timezone.now()
+            voting.save()
 
     return redirect('/voting/allVotings')
 
 def stop_voting(request):
-    if request.method == 'POST':
-        voting_id = request.POST.get('voting_id')
-        voting = get_object_or_404(Voting, pk=voting_id)
-        voting.end_date = timezone.now()
-        voting.save()
+    if not request.user.is_staff:
+        template = loader.get_template('403.html')
+        return HttpResponseForbidden(template.render({}, request))
+    else:
+        if request.method == 'POST':
+            voting_id = request.POST.get('voting_id')
+            voting = get_object_or_404(Voting, pk=voting_id)
+            voting.end_date = timezone.now()
+            voting.save()
 
     return redirect('/voting/allVotings')
 
 def tally_voting(request):
-    if request.method == 'POST':
-        voting_id = request.POST.get('voting_id')
-        voting = get_object_or_404(Voting, pk=voting_id)
-        token = request.session.get('auth-token', '')
-        voting.tally_votes(token)
+    if not request.user.is_staff:
+        template = loader.get_template('403.html')
+        return HttpResponseForbidden(template.render({}, request))
+    else:
+        if request.method == 'POST':
+            voting_id = request.POST.get('voting_id')
+            voting = get_object_or_404(Voting, pk=voting_id)
+            token = request.session.get('auth-token', '')
+            voting.tally_votes(token)
     
     return redirect('/voting/allVotings')
