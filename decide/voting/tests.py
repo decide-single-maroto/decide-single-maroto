@@ -5,8 +5,10 @@ from django.conf import settings
 from django.contrib.auth.models import User
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.test import TestCase
+from .forms import QuestionForm, QuestionOptionForm
 from rest_framework.test import APIClient
 from rest_framework.test import APITestCase
+from django.test import Client
 
 from selenium import webdriver
 from selenium.webdriver.support.ui import WebDriverWait
@@ -22,7 +24,8 @@ from mixnet.mixcrypt import MixCrypt
 from mixnet.models import Auth
 from voting.models import Voting, Question, QuestionOption
 from datetime import datetime
-
+from django.urls import reverse
+from django.contrib.auth import get_user_model
 
 class VotingTestCase(BaseTestCase):
 
@@ -415,3 +418,109 @@ class VotingModelTestCase(BaseTestCase):
     def testExist(self):
         v=Voting.objects.get(name='Votacion')
         self.assertEquals(v.question.options.all()[0].option, "opcion 1")
+        
+class CreateQuestionView(TestCase):
+    
+    def test_create_view(self):
+        
+        self.client = Client()
+        self.user = get_user_model().objects.create_user(username = 'adminadmin', password='adminadmin', is_staff=True, is_superuser=True)
+        self.client.force_login(self.user)
+    
+        url = reverse('new_question')
+        response = self.client.get(url)
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Desc', count=1)
+        
+    def test_create_question_with_form(self):
+        
+        self.client = Client()
+        self.user = get_user_model().objects.create_user(username = 'adminadmin', password='adminadmin', is_staff=True, is_superuser=True)
+        self.client.force_login(self.user)
+        
+        form_data = {
+            'desc': 'Prueba',
+            'cattegory': 'OPTIONS',
+            # Agrega más campos según tu formulario
+        }
+        
+        url = reverse('new_question')
+        response_post = self.client.post(url, data=form_data)
+        self.assertEqual(response_post.status_code, 200)
+        
+        question = Question.objects.get(desc="Prueba")
+        self.assertEqual(question.desc,"Prueba")
+    
+    def test_create_question_no_admin(self):
+        url = reverse('new_question')
+        response = self.client.get(url)
+        self.assertTemplateUsed(response,'403.html')
+    
+    def test_create_question_with_error(self):
+        
+        self.client = Client()
+        self.user = get_user_model().objects.create_user(username = 'adminadmin', password='adminadmin', is_staff=True, is_superuser=True)
+        self.client.force_login(self.user)
+        
+        form_data = {
+            'cattegory': 'OPTIONS',
+            # Agrega más campos según tu formulario
+        }
+        url = reverse('new_question')
+        
+        form = QuestionForm(data={})
+
+        self.assertFalse(form.is_valid())
+        self.assertTrue('desc' in form.errors)
+        
+class QuestionAllView(TestCase):
+    
+    def setUp(self):
+        q = Question(desc='Descripcion')
+        q.save()
+        
+        opt1 = QuestionOption(question=q, option='opcion 1')
+        opt1.save()
+        opt1 = QuestionOption(question=q, option='opcion 2')
+        opt1.save()
+
+        q1 = Question(desc='Descripcion2')
+        q1.save()
+        
+        opt1 = QuestionOption(question=q1, option='opcion 1')
+        opt1.save()
+        opt1 = QuestionOption(question=q1, option='opcion 2')
+        opt1.save()
+
+        q2 = Question(desc='Descripcion3')
+        q2.save()
+        
+        opt1 = QuestionOption(question=q2, option='opcion 1')
+        opt1.save()
+        opt1 = QuestionOption(question=q2, option='opcion 2')
+        opt1.save()
+
+        super().setUp()
+        
+    def test_all_question_view(self):
+        
+        self.client = Client()
+        self.user = get_user_model().objects.create_user(username = 'adminadmin', password='adminadmin', is_staff=True, is_superuser=True)
+        self.client.force_login(self.user)
+        
+        url = reverse('allQuestion')
+        response = self.client.get(url)
+        
+        self.assertTemplateUsed(response,'all_question.html')
+        self.assertContains(response,"Descripcion")
+        self.assertContains(response,"Descripcion2")
+        self.assertContains(response,"Descripcion3")
+        
+    def test_all_question_without_admin(self):    
+        url = reverse('new_question')
+        response = self.client.get(url)
+        self.assertTemplateUsed(response,'403.html')
+        
+                
+        

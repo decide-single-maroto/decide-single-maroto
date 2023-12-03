@@ -8,6 +8,3 @@ class NewCensusForm(forms.ModelForm):
     class Meta:
         model = Census
         fields = ('voting_id','voter_id')
-
-        
-        

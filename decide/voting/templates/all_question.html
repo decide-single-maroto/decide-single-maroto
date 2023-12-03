@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="container mt-5">
+        <h2>{{ title }}</h2>
+        <table class="table" id="question-table">
+            <thead>
+                <tr>
+                    <th data-visible="false">Id</th>
+                    <th data-sortable="true">Name</th>
+                    <th data-sortable="true">Type</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for q in questions %}
+                        <td>{{ q.id }}</td>
+                        <td>{{ q.desc }}</td>
+                        <td>{{ q.cattegory }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            var table = $('#question-table').DataTable({
+                "order": [[0, "desc"]]
+            });
+
+            // Agregar evento de clic a las filas
+            $('#question-table tbody').on('click', 'tr', function() {
+                var url = $(this).data('href');
+                if (url) {
+                    window.location.href = url;
+                }
+            });
+        });
+    </script>
+{% endblock %}

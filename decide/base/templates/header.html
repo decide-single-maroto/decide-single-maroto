@@ -14,7 +14,7 @@
 <body>
     <header class="navbar navbar-expand-lg navbar-light bg-light">
         <div class="container">
-            <a class="navbar-brand" href="#">Decide</a>
+            <a class="navbar-brand" href="/base">Decide</a>
             <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav"
                 aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
@@ -22,7 +22,17 @@
             <div class="collapse navbar-collapse" id="navbarNav">
                 <ul class="navbar-nav ml-auto"> 
                     {% if user.is_staff %}
-                    <div class="rounded-box">
+                    <div class="dropdown">
+                        <button class="btn btn-secondary dropdown-toggle" type="button" id="questionDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            Preguntas
+                        </button>
+                        <div class="dropdown-menu" aria-labelledby="questionDropdown">
+                            <a href="/voting/question/new" class="dropdown-item mb-2">Nueva Pregunta</a>
+                            <a href="/voting/allQuestion/" class="dropdown-item mb-2">Preguntas</a>
+                        </div>
+                    </div>
+                    
+                    <div class="rounded-box mr-2 ml-2">
                         <a class="btn btn-dark" href="/census/new">Nuevo Censo</a>
                     </div>
                     {% endif %}
