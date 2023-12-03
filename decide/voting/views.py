@@ -115,14 +115,13 @@ class VotingUpdate(generics.RetrieveUpdateDestroyAPIView):
 
 def QuestionCreateView(request):
     if not request.user.is_staff:
-        template = loader.get_template('403.html')
-        return HttpResponseForbidden(template.render({}, request))
+        return render(request, '403.html')
+        
     if request.method == 'POST':
         form = QuestionForm(request.POST)
         if form.is_valid():
             question = form.save()
             options_formset = QuestionOptionFormSet(request.POST, instance=question)
-            print(options_formset)
             if options_formset.is_valid():
                 options_formset.save()
                 return redirect('/base/')
@@ -133,9 +132,9 @@ def QuestionCreateView(request):
 
 def all_question(request):
     if not request.user.is_staff:
-        template = loader.get_template('403.html')
-        return HttpResponseForbidden(template.render({}, request))
+        return render(request, '403.html')
+        
     else:
         questions = Question.objects.all()
         return render(request, 'all_question.html', {'questions': questions, 'title': 'Preguntas',})
-    
+
