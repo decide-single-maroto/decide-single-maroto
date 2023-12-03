@@ -2,6 +2,8 @@ from django.db.utils import IntegrityError
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework import generics
 from rest_framework.response import Response
+from django.shortcuts import  render, redirect
+from django.http import HttpResponseForbidden
 from rest_framework.status import (
         HTTP_201_CREATED as ST_201,
         HTTP_204_NO_CONTENT as ST_204,
@@ -14,19 +16,29 @@ from base.perms import UserIsStaff
 from .models import Census
 import csv
 from django.http import HttpResponse
+from .forms import NewCensusForm
+from django.template import loader
+from django.core.exceptions import ValidationError
+from django.http import HttpResponseBadRequest
+import json
 
-# Function to export the census to a CSV file
 def export_census(request):
     selected_ids = request.GET.get('ids', '')
-    selected_ids = [int(id) for id in selected_ids.split(',')]
+    try:
+        selected_ids = [int(id) for id in selected_ids.split(',') if id]
+    except ValueError:
+        return HttpResponseBadRequest(json.dumps({'error': 'Invalid IDs provided'}), content_type='application/json')
+
+    try:
+        census_list = Census.objects.filter(id__in=selected_ids)
+    except ValidationError:
+        return HttpResponseBadRequest(json.dumps({'error': 'Invalid IDs provided'}), content_type='application/json')
 
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename="census_export.csv"'
 
     writer = csv.writer(response)
     writer.writerow(['Voting ID', 'Voter ID'])
-
-    census_list = Census.objects.filter(id__in=selected_ids)
 
     for census in census_list:
         writer.writerow([census.voting_id, census.voter_id])
@@ -69,3 +81,26 @@ class CensusDetail(generics.RetrieveDestroyAPIView):
         except ObjectDoesNotExist:
             return Response('Invalid voter', status=ST_401)
         return Response('Valid voter')
+
+
+def new_census_form(request):
+    form = NewCensusForm()
+    if not request.user.is_staff:
+        template = loader.get_template('403.html')
+        return HttpResponseForbidden(template.render({}, request))
+
+    if request.method == 'POST':
+        form = NewCensusForm(request.POST, request.FILES)
+
+        if form.is_valid():
+            item=form.save(commit=False)
+            item.save()
+
+            return redirect('/base')
+        else:
+            form = NewCensusForm()
+
+    return render(request, 'form.html', {
+        'form': form,
+        'title': 'Nuevo Censo',
+    })
