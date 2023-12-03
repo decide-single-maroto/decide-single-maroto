@@ -20,10 +20,24 @@
                 <span class="navbar-toggler-icon"></span>
             </button>
             <div class="collapse navbar-collapse" id="navbarNav">
-                <ul class="navbar-nav ml-auto"> 
+                <ul class="navbar-nav ml-auto">
                     {% if user.is_staff %}
+                    <div class="rounded-box mr-2">
+                        <div class="dropdown">
+                            <button class="btn btn-secondary dropdown-toggle" type="button" id="votacionDropdown"
+                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                Votación
+                            </button>
+                            <div class="dropdown-menu" aria-labelledby="votacionDropdown">
+                                <a href="/voting/newVoting" class="dropdown-item mb-2">Nueva Votación</a>
+                                <a href="/voting/allVotings/" class="dropdown-item mb-2">Votaciones</a>
+                                <a href="/voting/newAuth/" class="dropdown-item mb-2">Nuevo auth</a>
+                            </div>
+                        </div>
+                    </div>
                     <div class="dropdown">
-                        <button class="btn btn-secondary dropdown-toggle" type="button" id="questionDropdown" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <button class="btn btn-secondary dropdown-toggle" type="button" id="questionDropdown"
+                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                             Preguntas
                         </button>
                         <div class="dropdown-menu" aria-labelledby="questionDropdown">
@@ -31,19 +45,20 @@
                             <a href="/voting/allQuestion/" class="dropdown-item mb-2">Preguntas</a>
                         </div>
                     </div>
-                    
-                    <div class="rounded-box mr-2 ml-2">
-                        <a class="btn btn-dark" href="/census/new">Nuevo Censo</a>
-                    </div>
-                    {% endif %}
-                    <li class="nav-item active">
-                        <a class="nav-link" href="/authentication/logout">Log out <span class="sr-only">(current)</span></a>
-                    </li>
-                    <li class="nav-item">
-                        <a class="nav-link">{{ user.username }}</a>
-                    </li>
-                </ul>
             </div>
+
+            <div class="rounded-box mr-2 ml-2">
+                <a class="btn btn-dark" href="/census/new">Nuevo Censo</a>
+            </div>
+            {% endif %}
+            <li class="nav-item active">
+                <a class="nav-link" href="/authentication/logout">Log out <span class="sr-only">(current)</span></a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link">{{ user.username }}</a>
+            </li>
+            </ul>
+        </div>
         </div>
     </header>
 

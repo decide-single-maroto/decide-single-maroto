@@ -1,23 +1,17 @@
 import django_filters.rest_framework
 from django.conf import settings
 from django.utils import timezone
-from django.shortcuts import get_object_or_404,render,redirect
+from django.http import HttpResponseForbidden
+from django.template import loader
+from django.shortcuts import get_object_or_404, render, redirect
 from rest_framework import generics, status
 from rest_framework.response import Response
-
-
 from .models import Question, QuestionOption, Voting
 from .serializers import SimpleVotingSerializer, VotingSerializer
 from base.perms import UserIsStaff
 from base.models import Auth
 from .forms import *
 from django.views import View
-from django.template import loader
-from django.forms import inlineformset_factory
-from django.http import HttpResponseForbidden
-
-
-
 
 class VotingView(generics.ListCreateAPIView):
     queryset = Voting.objects.all()
@@ -112,6 +106,122 @@ class VotingUpdate(generics.RetrieveUpdateDestroyAPIView):
             st = status.HTTP_400_BAD_REQUEST
         return Response(msg, status=st)
 
+def new_voting(request):
+    if not request.user.is_staff:
+        template = loader.get_template('403.html')
+        return HttpResponseForbidden(template.render({}, request))
+    
+    if request.method == 'POST':
+        form = NewVotingForm(request.POST, request.FILES)
+
+        if form.is_valid():
+            voting_instance = form.save(commit=False)
+            voting_instance.save()
+
+            form.save_m2m()
+
+            return redirect('/voting/allVotings')
+    else:
+        form = NewVotingForm()
+
+    return render(request, 'form.html', {
+        'form': form,
+        'title': 'Nueva Votación',
+    })
+
+def edit_voting(request, voting_id):
+    voting=get_object_or_404(Voting, pk=voting_id)
+
+    if not request.user.is_staff:
+        template = loader.get_template('403.html')
+        return HttpResponseForbidden(template.render({}, request))
+
+    if request.method == 'POST':
+        form = EditVotingForm(request.POST, request.FILES, instance=voting)
+
+        if form.is_valid():
+
+            voting_instance = form.save(commit=False)
+            voting_instance.save()
+
+            form.save_m2m()
+
+            return redirect('/voting/allVotings')
+    else:
+        form = EditVotingForm(instance=voting)
+
+    return render(request, 'form.html', {
+        'form': form,
+        'title': 'Modificar Votación',
+    })
+
+def all_votings(request):
+    if not request.user.is_staff:
+        template = loader.get_template('403.html')
+        return HttpResponseForbidden(template.render({}, request))
+    else:
+        votings = Voting.objects.all()
+        return render(request, 'allVotings.html', {'votings': votings, 'title': 'Votaciones',})
+    
+
+def new_auth(request):
+    if not request.user.is_staff:
+        template = loader.get_template('403.html')
+        return HttpResponseForbidden(template.render({}, request))
+    
+    if request.method == 'POST':
+        form = NewAuthForm(request.POST, request.FILES)
+        if form.is_valid():
+            item = form.save() 
+            return redirect('/base')
+
+    else:
+        form = NewAuthForm()
+
+    return render(request, 'authForm.html', {
+        'form': form,
+        'title': 'Nuevo Auth',
+    })
+
+def start_voting(request):
+    if not request.user.is_staff:
+        template = loader.get_template('403.html')
+        return HttpResponseForbidden(template.render({}, request))
+    else:
+        if request.method == 'POST':
+            voting_id = request.POST.get('voting_id')
+            voting = get_object_or_404(Voting, pk=voting_id)        
+            voting.create_pubkey()
+            voting.start_date = timezone.now()
+            voting.save()
+
+    return redirect('/voting/allVotings')
+
+def stop_voting(request):
+    if not request.user.is_staff:
+        template = loader.get_template('403.html')
+        return HttpResponseForbidden(template.render({}, request))
+    else:
+        if request.method == 'POST':
+            voting_id = request.POST.get('voting_id')
+            voting = get_object_or_404(Voting, pk=voting_id)
+            voting.end_date = timezone.now()
+            voting.save()
+
+    return redirect('/voting/allVotings')
+
+def tally_voting(request):
+    if not request.user.is_staff:
+        template = loader.get_template('403.html')
+        return HttpResponseForbidden(template.render({}, request))
+    else:
+        if request.method == 'POST':
+            voting_id = request.POST.get('voting_id')
+            voting = get_object_or_404(Voting, pk=voting_id)
+            token = request.session.get('auth-token', '')
+            voting.tally_votes(token)
+    
+    return redirect('/voting/allVotings')
 
 def QuestionCreateView(request):
     if not request.user.is_staff:
