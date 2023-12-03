@@ -7,13 +7,9 @@ from rest_framework.status import (
 from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import User
-from django.shortcuts import render
 
 from django.db import IntegrityError
-from django.shortcuts import get_object_or_404, render,redirect
-from django.contrib.auth.forms import UserCreationForm
-from django.core.exceptions import ObjectDoesNotExist
-from django.contrib.auth.views import LoginView
+from django.shortcuts import get_object_or_404, render, redirect
 from django.views.generic import TemplateView, View
 from django.contrib.auth import authenticate, login, logout
 
