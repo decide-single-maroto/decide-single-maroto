@@ -197,7 +197,6 @@ class CensusFormTest(TestCase):
         self.client.force_login(self.user)
         
         url = reverse('new_census')
-        response = self.client.get(url)
         form_data = {
             'voting_id': 1,
             'voter_id':1,
@@ -216,9 +215,7 @@ class CensusFormTest(TestCase):
         form_data = {
             'voter_id': 1,
         }
-        url = reverse('new_census')
-        
-        form = NewCensusForm(data={})
+        form = NewCensusForm(form_data)
 
         self.assertFalse(form.is_valid())
         self.assertTrue('voting_id' in form.errors)
