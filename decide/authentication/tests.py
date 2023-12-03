@@ -8,6 +8,7 @@
 # from base import mods
 
 
+
 # class AuthTestCase(APITestCase):
 
 #     def setUp(self):
@@ -15,8 +16,7 @@
 #         mods.mock_query(self.client)
 #         u = User(username='voter1')
 #         u.set_password('123')
-#         u.save()
-
+#         u.save()º
 #         u2 = User(username='admin')
 #         u2.set_password('admin')
 #         u2.is_superuser = True
