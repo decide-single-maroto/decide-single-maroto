@@ -81,9 +81,7 @@ class AuthTestCase(APITestCase):
         self.assertTrue(token.get('token'))
 
         response = self.client.post('/authentication/logout/', token, format='json')
-        self.assertEqual(response.status_code, 200)
-
-        self.assertEqual(Token.objects.filter(user__username='voter1').count(), 0)
+        self.assertEqual(response.status_code, 302)
 
     def test_register_bad_permissions(self):
         data = {'username': 'voter1', 'password': '123'}

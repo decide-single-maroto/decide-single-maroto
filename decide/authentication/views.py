@@ -64,6 +64,11 @@ class LogoutView(View):
         if request.user.is_authenticated:
             logout(request)
         return redirect('/')
+    
+    def post(self, request):
+        if request.user.is_authenticated:
+            logout(request)
+        return redirect('/')
 
 class RegisterView(APIView):
     def get(self, request):
