@@ -6,6 +6,10 @@ on:
       - develop
       - master
       - github-actions
+  pull_request:
+    branches:
+      - develop
+      - master
   workflow_call:
     secrets:
       CODACY_PROJECT_TOKEN:
