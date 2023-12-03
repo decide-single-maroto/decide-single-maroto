@@ -1,6 +1,5 @@
 from import_export import resources
 from import_export.admin import ImportExportModelAdmin
-
 from django.contrib import admin
 from django.http import HttpResponse
 from django.contrib.admin import SimpleListFilter
@@ -13,7 +12,6 @@ class VotingIdFilter(SimpleListFilter):
     parameter_name = 'voting_id'
 
     def lookups(self, request, model_admin):
-        # Get all unique values of voting_id in the model
         voting_ids = Census.objects.values_list('voting_id', flat=True).distinct()
         return [(voting_id, str(voting_id)) for voting_id in voting_ids]
 
@@ -21,6 +19,7 @@ class VotingIdFilter(SimpleListFilter):
         value = self.value()
         if value:
             return queryset.filter(voting_id=value)
+        return queryset
 
 class CensusResource(resources.ModelResource):
     fields = (
@@ -36,11 +35,12 @@ class CensusResource(resources.ModelResource):
 class CensusAdmin(ImportExportModelAdmin):
     resource_class = CensusResource
     list_display = ('voting_id', 'voter_id')
-    list_filter = (VotingIdFilter, ) # Added the filter for VotingIdFilter
+    list_filter = (VotingIdFilter, )
     search_fields = ('voter_id', )
     actions = ["export_selected"]
 
-    def export_selected(modeladmin, request, queryset):
+    @classmethod
+    def export_selected(cls, modeladmin, request, queryset):
         response = HttpResponse(content_type='text/csv')
         response['Content-Disposition'] = 'attachment; filename="census_export.csv"'
 
@@ -55,5 +55,5 @@ class CensusAdmin(ImportExportModelAdmin):
     export_selected.short_description = "Export census"
 
 
-
 admin.site.register(Census, CensusAdmin)
+
