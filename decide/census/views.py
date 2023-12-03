@@ -78,7 +78,7 @@ class CensusDetail(generics.RetrieveDestroyAPIView):
 def new_census_form(request):
     form = NewCensusForm()
     if not request.user.is_staff:
-        template = loader.get_template('/voting/403.html')
+        template = loader.get_template('403.html')
         return HttpResponseForbidden(template.render({}, request))
 
     if request.method == 'POST':
