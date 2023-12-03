@@ -1,0 +1,129 @@
+{% extends 'base.html' %}
+
+{% block content %}
+
+<body>
+    <h1 class="mb-6 text-3xl" style="max-width: 100%; margin-left: 403px;"> {{ title }}</h1>
+    <div class="container mt-5">
+        <form method="post" action="">
+            <div class='space-y-4' id=options-container>
+
+                {% csrf_token %}
+
+                {{ form.as_p }}
+                {{ form.options.as_table }}
+                {% for field in form.visible_fields %}
+                    {% if field.errors %}
+                        <div class="alert alert-danger">
+                            {% for error in field.errors %}
+                                {{ error }}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                {% endfor %}
+            </div>
+            <button class="mt-6 py-3 px-6 text-lg bg-blue-500 hover:bg-teal-700 rounded-xl text-black"
+                type="submit">Guardar pregunta</button>
+        </form>
+    
+
+    <button class="mt-6 py-3 px-6 text-lg bg-blue-500 hover:bg-teal-700 rounded-xl text-black" type="button"
+        onclick="addOptions()">añadir opcion</button>
+    </div>
+
+</body>
+<script>
+    var newIndex = 1;
+    function addOptions() {
+        // Obtén el contenedor de opciones
+        var optionsContainer = document.getElementById("options-container");
+
+        console.log(newIndex);
+        // Crea un nuevo conjunto de elementos para las opciones
+
+        var newNumberLabel = document.createElement("label");
+        var newNumberInput = document.createElement("input");
+        var newOptionLabel = document.createElement("label");
+        var newOptionTextarea = document.createElement("textarea");
+        var newDeleteLabel = document.createElement("label");
+        var newDeleteCheckbox = document.createElement("input");
+        var newIdInput = document.createElement("input");
+        var newQuestionInput = document.createElement("input");
+
+        // Configura los atributos y propiedades necesarios
+
+
+        newNumberLabel.setAttribute("for", "id_options-" + newIndex + "-number");
+        newNumberLabel.textContent = "Number:";
+        newNumberInput.type = "number";
+        newNumberInput.name = "options-" + newIndex + "-number";
+        newNumberInput.min = "0";
+        newNumberInput.id = "id_options-" + newIndex + "-number";
+
+        newOptionLabel.setAttribute("for", "id_options-" + newIndex + "-option");
+        newOptionLabel.textContent = "Option:";
+        newOptionTextarea.name = "options-" + newIndex + "-option";
+        newOptionTextarea.cols = "40";
+        newOptionTextarea.rows = "10";
+        newOptionTextarea.id = "id_options-" + newIndex + "-option";
+
+        newDeleteLabel.setAttribute("for", "id_options-" + newIndex + "-DELETE");
+        newDeleteLabel.textContent = "Delete:";
+        newDeleteCheckbox.type = "checkbox";
+        newDeleteCheckbox.name = "options-" + newIndex + "-DELETE";
+        newDeleteCheckbox.id = "id_options-" + newIndex + "-DELETE";
+
+        newIdInput.type = "hidden";
+        newIdInput.name = "options-" + newIndex + "-id";
+        newIdInput.id = "id_options-" + newIndex + "-id";
+
+        newQuestionInput.type = "hidden";
+        newQuestionInput.name = "options-" + newIndex + "-question";
+        newQuestionInput.id = "id_options-" + newIndex + "-question";
+
+        // Agrega los nuevos elementos al contenedor
+        optionsContainer.appendChild(document.createElement("br"))
+        optionsContainer.appendChild(newNumberLabel);
+        optionsContainer.appendChild(newNumberInput);
+        optionsContainer.appendChild(newOptionLabel);
+        optionsContainer.appendChild(newOptionTextarea);
+        optionsContainer.appendChild(newDeleteLabel);
+        optionsContainer.appendChild(newDeleteCheckbox);
+        optionsContainer.appendChild(newIdInput);
+        optionsContainer.appendChild(newQuestionInput);
+
+
+
+        newIndex = newIndex + 1;
+
+        // Obtén el contenedor de la tabla
+        var optionsTable = document.getElementById("options-table");
+
+        // Crea un nuevo conjunto de filas para las opciones
+        nuevoIndex = parseInt(document.getElementById("id_options-TOTAL_FORMS").value);
+
+        // Actualiza el valor de MAX_NUM_FORMS dinámicamente
+        var maxNumFormsInput = document.getElementById("id_options-MAX_NUM_FORMS");
+        maxNumFormsInput.value = 100;
+
+        document.getElementById("id_options-TOTAL_FORMS").value = nuevoIndex + 1;
+
+
+    }
+</script>
+<style>
+    /* Estilos específicos del formulario */
+    form textarea,
+    form select {
+        width: 100%;
+        /* Ajusta el ancho según tus necesidades */
+        padding: 10px;
+        margin-bottom: 10px;
+        box-sizing: border-box;
+        border: 2px solid #ddd;
+        /* Color del borde */
+        border-radius: 8px;
+        /* Radio del borde para que sea redondeado */
+    }
+</style>
+{% endblock %}

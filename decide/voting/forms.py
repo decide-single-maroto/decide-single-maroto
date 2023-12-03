@@ -1,5 +1,5 @@
 from django import forms
-from .models import Voting, Auth
+from .models import Voting, Auth,Question, QuestionOption
 
 INPUT_CLASSES = 'w-full py-4 px-6 rounded-xl border'
 
@@ -51,3 +51,16 @@ class NewAuthForm(forms.ModelForm):
                 'class': INPUT_CLASSES
             }),            
         }
+class QuestionOptionForm(forms.ModelForm):
+    class Meta:
+        model = QuestionOption
+        fields = ['number','option']
+
+QuestionOptionFormSet = forms.inlineformset_factory(Question, QuestionOption, form=QuestionOptionForm, extra=1, can_delete=True)
+
+class QuestionForm(forms.ModelForm):
+    class Meta:
+        model = Question
+        fields = ['desc', 'cattegory']
+
+    options = QuestionOptionFormSet()

@@ -6,15 +6,12 @@ from django.template import loader
 from django.shortcuts import get_object_or_404, render, redirect
 from rest_framework import generics, status
 from rest_framework.response import Response
-
 from .models import Question, QuestionOption, Voting
 from .serializers import SimpleVotingSerializer, VotingSerializer
 from base.perms import UserIsStaff
-
 from base.models import Auth
-
-from .forms import NewVotingForm, NewAuthForm, EditVotingForm
-
+from .forms import *
+from django.views import View
 
 class VotingView(generics.ListCreateAPIView):
     queryset = Voting.objects.all()
@@ -225,3 +222,29 @@ def tally_voting(request):
             voting.tally_votes(token)
     
     return redirect('/voting/allVotings')
+
+def QuestionCreateView(request):
+    if not request.user.is_staff:
+        return render(request, '403.html')
+        
+    if request.method == 'POST':
+        form = QuestionForm(request.POST)
+        if form.is_valid():
+            question = form.save()
+            options_formset = QuestionOptionFormSet(request.POST, instance=question)
+            if options_formset.is_valid():
+                options_formset.save()
+                return redirect('/base/')
+    else:
+        form = QuestionForm()
+
+    return render(request, 'question_create.html', {'form': form})
+
+def all_question(request):
+    if not request.user.is_staff:
+        return render(request, '403.html')
+        
+    else:
+        questions = Question.objects.all()
+        return render(request, 'all_question.html', {'questions': questions, 'title': 'Preguntas',})
+
