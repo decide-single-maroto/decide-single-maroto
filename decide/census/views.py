@@ -104,3 +104,11 @@ def new_census_form(request):
         'form': form,
         'title': 'Nuevo Censo',
     })
+
+def all_census(request):
+    if not request.user.is_staff:
+        template = loader.get_template('403.html')
+        return HttpResponseForbidden(template.render({}, request))
+    else:
+        censuses = Census.objects.all()
+        return render(request, 'all_census.html', {'censuses': censuses, 'title': 'Lista de Censos'})

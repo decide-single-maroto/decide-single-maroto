@@ -35,21 +35,32 @@
                             </div>
                         </div>
                     </div>
-                    <div class="dropdown">
-                        <button class="btn btn-secondary dropdown-toggle" type="button" id="questionDropdown"
-                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                            Preguntas
-                        </button>
-                        <div class="dropdown-menu" aria-labelledby="questionDropdown">
-                            <a href="/voting/question/new" class="dropdown-item mb-2">Nueva Pregunta</a>
-                            <a href="/voting/allQuestion/" class="dropdown-item mb-2">Preguntas</a>
+                    <div class="rounded-box mr-2">
+                        <div class="dropdown">
+                            <button class="btn btn-secondary dropdown-toggle" type="button" id="questionDropdown"
+                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                Preguntas
+                            </button>
+                            <div class="dropdown-menu" aria-labelledby="questionDropdown">
+                                <a href="/voting/question/new" class="dropdown-item mb-2">Nueva Pregunta</a>
+                                <a href="/voting/allQuestion/" class="dropdown-item mb-2">Preguntas</a>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="rounded-box mr-2">
+                        <div class="dropdown">
+                            <button class="btn btn-secondary dropdown-toggle" type="button" id="censoDropdown"
+                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                Censo
+                            </button>
+                            <div class="dropdown-menu" aria-labelledby="censoDropdown">
+                                <a class="dropdown-item mb-2" href="/census/all_census">Censos</a>
+                                <a class="dropdown-item mb-2" href="/census/new">Nuevo Censo</a>
+                            </div>
                         </div>
                     </div>
             </div>
-
-            <div class="rounded-box mr-2 ml-2">
-                <a class="btn btn-dark" href="/census/new">Nuevo Censo</a>
-            </div>
+            
             {% endif %}
             <li class="nav-item active">
                 <a class="nav-link" href="/authentication/logout">Log out <span class="sr-only">(current)</span></a>

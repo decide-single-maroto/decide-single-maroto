@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+
+{% block content %}
+    <div class="container mt-5">
+        <h2>{{ title }}</h2>
+        <table class="table" id="censuses-table">
+            <thead>
+                <tr>
+                    <th data-visible="false">Id</th>
+                    <th data-sortable="true">Voting ID</th>
+                    <th data-sortable="true">Voter ID</th>
+                    <!-- Agrega aquí más columnas según tus necesidades -->
+                </tr>
+            </thead>
+            <tbody>
+                {% for census in censuses %}
+                    <tr>
+                        <td>{{ census.id }}</td>
+                        <td>{{ census.voting_id }}</td>
+                        <td>{{ census.voter_id }}</td>
+                        <!-- Agrega aquí más columnas según tus necesidades -->
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+
+    <script>
+        $(document).ready(function() {
+            // Agregar evento de clic a las filas
+            $('#censuses-table tbody').on('click', 'tr', function() {
+                // Puedes agregar aquí la lógica para redirigir a detalles si es necesario
+            });
+
+            // Inicializar DataTables con opciones adicionales
+            var table = $('#censuses-table').DataTable({
+                "order": [[0, "desc"]],
+                "deferRender": true,
+                "orderCellsTop": true,
+                // Agrega aquí más opciones según tus necesidades
+            });
+
+            // Puedes agregar más scripts según tus necesidades
+        });
+    </script>
+{% endblock %}
