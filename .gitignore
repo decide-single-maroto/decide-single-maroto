@@ -101,6 +101,3 @@ ENV/
 .mypy_cache/
 
 .vagrant
-
-# Static files
-/static/

@@ -12,4 +12,3 @@ pynose==1.4.8
 django-rest-swagger==2.2.0
 selenium==4.7.2
 django-allauth
-django-import-export

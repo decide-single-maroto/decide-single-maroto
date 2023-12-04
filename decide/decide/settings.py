@@ -52,8 +52,6 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
-
-    'import_export',
 ]
 
 SOCIALACCOUNT_LOGIN_ON_GET = True
@@ -187,7 +185,6 @@ TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
 # https://docs.djangoproject.com/en/2.0/howto/static-files/
 
 STATIC_URL = '/static/'
-STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 # number of bits for the key, all auths should use the same number of bits
 KEYBITS = 256
