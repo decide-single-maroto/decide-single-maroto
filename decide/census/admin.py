@@ -1,3 +1,5 @@
+from import_export import resources
+from import_export.admin import ImportExportModelAdmin
 from django.contrib import admin
 from django.http import HttpResponse
 from django.contrib.admin import SimpleListFilter
@@ -19,7 +21,19 @@ class VotingIdFilter(SimpleListFilter):
             return queryset.filter(voting_id=value)
         return queryset
 
-class CensusAdmin(admin.ModelAdmin):
+class CensusResource(resources.ModelResource):
+    fields = (
+        'voting_id',
+        'voter_id',
+        )
+    class Meta:
+        model = Census
+        skip_unchanged = True
+        report_skipped = True
+        import_id_fields = ('voting_id', 'voter_id')
+
+class CensusAdmin(ImportExportModelAdmin):
+    resource_class = CensusResource
     list_display = ('voting_id', 'voter_id')
     list_filter = (VotingIdFilter, )
     search_fields = ('voter_id', )
@@ -40,6 +54,6 @@ class CensusAdmin(admin.ModelAdmin):
 
     export_selected.short_description = "Export census"
 
-# Registrar el modelo
+
 admin.site.register(Census, CensusAdmin)
 
