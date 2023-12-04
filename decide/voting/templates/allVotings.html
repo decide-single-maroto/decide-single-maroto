@@ -12,6 +12,7 @@
                     <th data-sortable="true">End Date</th>
                     <th data-sortable="true">Model</th>
                     <th data-sortable="false">Actions</th>
+                    <th data-sortable="false>">Datos</th>
                 </tr>
             </thead>
             <tbody>
@@ -49,6 +50,13 @@
 
                             {% if voting.postproc != None %}
                                 <p> No more actions</p>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if voting.start_date != None or voting.end_date != None %}
+                                <form action="{% url 'visualizer' voting_id=voting.id %}" method="get">
+                                    <button type="submit" class="btn btn-primary">Ver datos</button>
+                                </form>
                             {% endif %}
                         </td>
                     </tr>
