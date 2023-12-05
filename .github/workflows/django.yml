@@ -5,18 +5,27 @@ on:
     branches:
       - develop
       - master
+      - github-actions
+  pull_request:
+    branches:
+      - develop
+      - master
+  workflow_call:
+    secrets:
+      CODACY_PROJECT_TOKEN:
+        required: true
 
 jobs:
   build:
     strategy:
       matrix:
-        pyversion: ['3.8','3.9']
+        pyversion: ['3.10.12']
 
     runs-on: ubuntu-latest
 
     services:
       postgres:
-        image: postgres:11.18-bullseye
+        image: postgres:14.9
         env:
           POSTGRES_USER: decide
           POSTGRES_PASSWORD: decide
@@ -40,6 +49,12 @@ jobs:
         pip install -r requirements.txt
         pip install codacy-coverage
         cp decide/local_settings.gactions.py decide/local_settings.py
+    - name: Install dependencies and config
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+        pip install codacy-coverage
+        cp decide/local_settings.gactions.py decide/local_settings.py
     - name: Run migrations (unnecessary)
       run: |
         cd decide
@@ -54,4 +69,3 @@ jobs:
       with:
           project-token: ${{ secrets.CODACY_PROJECT_TOKEN }}
           coverage-reports: decide/coverage.xml
-

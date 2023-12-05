@@ -3,11 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inicio de Sesión Exitoso</title>
+    <title>Sesión Iniciada</title>
 </head>
 <body>
-    <div style="text-align: center; padding: 50px;">
-        <h1>¡Has iniciado sesión correctamente!</h1>
-    </div>
+    <h1>Bienvenido</h1>
+        <p>¡Bienvenido {{ user.username }}!</p>
+        <p>Correo electrónico: {{ user.email }}</p>
 </body>
 </html>

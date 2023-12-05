@@ -21,8 +21,29 @@
             <h1>[[ voting.id ]] - [[ voting.name ]]</h1>
 
             <h2 v-if="!voting.start_date">Votación no comenzada</h2>
-            <h2 v-else-if="!voting.end_date">Votación en curso</h2>
+            <div v-else-if="!voting.end_date">
+                <h2>Votación en curso</h2>
+                <p>Información en tiempo real:</p>
+
+                <table class="table table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <th>Número de votantes</th>
+                            <th>Número de votos</th>
+                            <th>Porcentaje de participación</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td id="census"> [[realTimeData.num_census]]</td>
+                            <td id="votes"> [[realTimeData.num_votos]]</td>
+                            <td id="participation"> [[realTimeData.participation]]</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
             <div v-else>
+
                 <h2 class="heading">Resultados:</h2>
 
                 <table v-if="voting.model === 'DHONDT'" class="table table-bordered table-striped">
@@ -52,6 +73,15 @@
                         </tr>
                     </tbody>
                 </table>
+                <select id="chart-select" onchange="showChart()">
+                    <option value="bar-chart">Bar Chart</option>
+                    <option value="polar-chart-post">Polar Chart (Puntuación)</option>
+                    <option value="polar-chart-votes">Polar Chart (Votos)</option>
+                </select>
+
+                <canvas id="bar-chart"></canvas>
+                <canvas id="polar-chart-post" style="display:none"></canvas>
+                <canvas id="polar-chart-votes" style="display:none"></canvas>
             </div>
 
         </div>
@@ -64,17 +94,149 @@
     <script src="https://unpkg.com/babel-polyfill@latest/dist/polyfill.min.js"></script>
     <script src="https://unpkg.com/bootstrap@5.2.2/dist/js/bootstrap.js"></script>
 
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@2.9.4"></script>
+
     <script>
-        var voting = {{voting|safe}};
+        var voting = {{ voting | safe }};
+        var realTimeData = {{ realTimeData | safe }};
+
         const { createApp } = Vue
         createApp({
             delimiters: ['[[', ']]'],
             data() {
                 return {
-                    voting: voting
+                    voting: voting,
+                    realTimeData:realTimeData
                 }
             }
         }).mount('#app-visualizer')
+    </script>
+
+    <script>
+        function showChart() {
+            const select = document.getElementById("chart-select");
+            const chartId = select.value;
+            const charts = document.getElementsByTagName("canvas");
+
+            for (let i=0; i<charts.length; i++) {
+                if(charts[i].id === chartId) {
+                    charts[i].style.display = "block";
+                } else {
+                    charts[i].style.display = "none";
+                }
+            }
+        }
+    </script>
+
+    <script>
+        let labels = voting.postproc.map((opt) => opt.option)
+        let postproc = voting.postproc.map((opt) => opt.postproc)
+        let votes = voting.postproc.map((opt) => opt.votes)
+
+        // Generar colores aleatorios para los elementos del gráfico
+        let generateRandomColors = (numColors) => {
+            const randomColors = [];
+            for (let i = 0; i < numColors; i++) {
+                const randomColor = "#" + Math.floor(Math.random() * 16777215).toString(16);
+                randomColors.push(randomColor);
+            }
+            return randomColors;
+        };
+
+        let numDataPoints = voting.postproc.length; 
+        let randomColors = generateRandomColors(numDataPoints);
+
+        let ctx = document.getElementById("bar-chart").getContext("2d");
+        let chart = new Chart(ctx, {
+            type: "bar",
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label:"Puntuación",
+                        backgroundColor: 'rgba(70,130,180,0.5)',
+                        borderColor: "#4682B4",
+                        data: postproc
+                    },
+                    {
+                        label: "Votos",
+                        backgroundColor: 'rgba(255,140,0,0.5)',
+                        borderColor: "#FF8C00",
+                        data: votes
+                    }
+                ]
+            },
+            options: {
+                title: {
+                    text: voting.name,
+                    display: true
+                }
+            }
+        });
+
+        // Obtener el contexto del canvas
+        let polarChartScoreCanvas = document.getElementById("polar-chart-post");
+        let ctxPolarChartScore = polarChartScoreCanvas.getContext("2d");
+
+        // Definir los datos y opciones del gráfico
+        const polarChartDataScore = {
+            labels: labels,
+            datasets: [
+                {
+                    label:"Puntuación",
+                    backgroundColor: randomColors,
+                    borderColor: randomColors,
+                    borderWidth: 1,
+                    data: postproc
+                }
+            ]
+        };
+
+        const chartOptionsPolarScore = {
+            responsive: true,
+            title: {
+                text: voting.name +  ' (Puntuación)',
+                display: true
+            }
+        };
+
+        // Crear el gráfico
+        const polarChartScore = new Chart(ctxPolarChartScore, {
+            type: 'polarArea',
+            data: polarChartDataScore,
+            options: chartOptionsPolarScore
+        });
+
+        let polarChartVotesCanvas = document.getElementById("polar-chart-votes");
+        let ctxPolarChartVotes = polarChartVotesCanvas.getContext("2d");
+
+        const polarChartDataVotes = {
+            labels: labels,
+            datasets: [
+                {
+                    label:"Votos",
+                    backgroundColor: randomColors,
+                    borderColor: randomColors,
+                    borderWidth: 1,
+                    data: votes
+                }
+            ]
+        };
+
+        const chartOptionsPolarVotes = {
+            responsive: true,
+            title: {
+                text: voting.name + ' (votos)',
+                display: true
+            }
+        }; 
+
+        const polarChartVotes = new Chart(ctxPolarChartVotes, {
+            type: 'polarArea',
+            data: polarChartDataVotes,
+            options: chartOptionsPolarVotes
+        });
+
     </script>
 </body>
 {% endblock %}

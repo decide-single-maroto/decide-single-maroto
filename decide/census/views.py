@@ -12,6 +12,34 @@ from rest_framework.status import (
 
 from base.perms import UserIsStaff
 from .models import Census
+import csv
+from django.http import HttpResponse
+from django.core.exceptions import ValidationError
+from django.http import HttpResponseBadRequest
+import json
+
+def export_census(request):
+    selected_ids = request.GET.get('ids', '')
+    try:
+        selected_ids = [int(id) for id in selected_ids.split(',') if id]
+    except ValueError:
+        return HttpResponseBadRequest(json.dumps({'error': 'Invalid IDs provided'}), content_type='application/json')
+
+    try:
+        census_list = Census.objects.filter(id__in=selected_ids)
+    except ValidationError:
+        return HttpResponseBadRequest(json.dumps({'error': 'Invalid IDs provided'}), content_type='application/json')
+
+    response = HttpResponse(content_type='text/csv')
+    response['Content-Disposition'] = 'attachment; filename="census_export.csv"'
+
+    writer = csv.writer(response)
+    writer.writerow(['Voting ID', 'Voter ID'])
+
+    for census in census_list:
+        writer.writerow([census.voting_id, census.voter_id])
+
+    return response
 
 
 class CensusCreate(generics.ListCreateAPIView):

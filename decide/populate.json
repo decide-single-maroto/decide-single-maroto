@@ -243,7 +243,8 @@
         "model": "voting.question",
         "pk": 1,
         "fields": {
-            "desc": "¿Es esto una votación correcta?"
+            "desc": "¿Es esto una votación correcta?",
+            "cattegory": "OPTIONS"
         }
     },
     {
@@ -330,5 +331,25 @@
                 1
             ]
         }
+    },
+    {
+        "model": "sites.site",
+        "pk": 3,
+        "fields": {
+            "domain": "127.0.0.1:8000",
+            "name": "127.0.0.1:8000"
+        }
+    },
+    {
+        "model": "socialaccount.socialapp",
+        "pk": 1,
+        "fields": {
+            "provider": "google",
+            "name": "decide-single-maroto",
+            "client_id": "558970792437-0rlcb3qqajt40khtrd2goilcja5s6jh5.apps.googleusercontent.com",
+            "secret": "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",
+            "sites": [3]
+        }
     }
+
 ]
