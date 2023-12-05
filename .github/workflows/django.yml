@@ -60,6 +60,7 @@ jobs:
     - name: Run migrations (unnecessary)
       run: |
         cd decide
+        python manage.py makemigrations
         python manage.py migrate
     - name: Run tests
       run: |
