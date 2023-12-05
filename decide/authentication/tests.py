@@ -7,7 +7,7 @@ from django.contrib.auth.models import User
 from allauth.socialaccount.models import SocialApp
 from django.contrib.sites.models import Site
 from django.core.exceptions import ObjectDoesNotExist
-from bs4 import BeautifulSoup
+from rest_framework.authtoken.models import Token
 
 from base import mods
 
@@ -52,19 +52,6 @@ class AuthTestCase(APITestCase):
     def tearDown(self):
         self.client = None
 
-    # def test_login(self):
-    #     data = {'username': 'voter1', 'password': '123'}
-    #     response = self.client.post('/authentication/login/', data, format='json')
-    #     self.assertEqual(response.status_code, 200)
-
-    #     token = response.json()
-    #     self.assertTrue(token.get('token'))
-
-    # def test_login_fail(self):
-    #     data = {'username': 'voter1', 'password': '321'}
-    #     response = self.client.post('/authentication/login/', data, format='json')
-    #     self.assertEqual(response.status_code, 400)
-
     def test_login_google_auth(self):
         signin_url = reverse('signin')
 
@@ -81,14 +68,14 @@ class AuthTestCase(APITestCase):
         self.assertTrue(response.url.startswith('https://accounts.google.com/o/oauth2'))
 
 
-    # def test_logout(self):
-    #     data = {'username': 'voter1', 'password': '123'}
-    #     response = self.client.post('/authentication/login/', data, format='json')
-    #     self.assertEqual(response.status_code, 200)
-    #     self.assertEqual(Token.objects.filter(user__username='voter1').count(), 1)
+    def test_logout(self):
+        data = {'username': 'voter1', 'password': '123'}
+        response = self.client.post('/authentication/login/', data, format='json')
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(Token.objects.filter(user__username='voter1').count(), 1)
 
-    #     token = response.json()
-    #     self.assertTrue(token.get('token'))
+        token = response.json()
+        self.assertTrue(token.get('token'))
 
-    #     response = self.client.post('/authentication/logout/', token, format='json')
-    #     self.assertEqual(response.status_code, 302)
+        response = self.client.post('/authentication/logout/', token, format='json')
+        self.assertEqual(response.status_code, 302)
