@@ -3,6 +3,26 @@
 {% block content %}
     <div class="container mt-5">
         <h2>{{ title }}</h2>
+
+        <form action="{% url 'export_census' %}" method="get">
+            <button type="submit" class="btn btn-primary">Exportar Censo</button>
+        </form>
+
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            Seleccionar archivo: <input type="file" name="csv_file">
+            <button type="submit" class="btn btn-success" id="importButton">Importar Censo</button>
+        </form>
+        
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }}" role="alert">
+                    <p>{% if message.tags %} class="" {% endif %}>{{ message }}</p>
+                </div>
+            {% endfor %}
+        {% endif %}
+                
         <table class="table" id="censuses-table">
             <thead>
                 <tr>
@@ -29,10 +49,15 @@
     <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
 
     <script>
-        $(document).ready(function() {
+        jQuery(document).ready(function($) {
+            console.log('Documento listo');
+
+            $('#importButton').click(function() {
+                console.log('Botón importar clickeado');
+            });
+
             // Agregar evento de clic a las filas
             $('#censuses-table tbody').on('click', 'tr', function() {
-                // Puedes agregar aquí la lógica para redirigir a detalles si es necesario
             });
 
             // Inicializar DataTables con opciones adicionales
@@ -40,10 +65,8 @@
                 "order": [[0, "desc"]],
                 "deferRender": true,
                 "orderCellsTop": true,
-                // Agrega aquí más opciones según tus necesidades
             });
 
-            // Puedes agregar más scripts según tus necesidades
         });
     </script>
 {% endblock %}

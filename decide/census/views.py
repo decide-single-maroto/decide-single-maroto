@@ -1,9 +1,25 @@
+from import_export.admin import ImportMixin
 from django.db.utils import IntegrityError
 from django.core.exceptions import ObjectDoesNotExist
+from django.core.exceptions import ValidationError
+from django.shortcuts import  render, redirect
+from django.contrib import messages
+from django.contrib import admin
+from django.template import loader
+from django.template import loader
+from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponse
+from django.http import HttpResponseForbidden
+from django.http import HttpResponseBadRequest
+from django.http import HttpResponseRedirect
+from base.perms import UserIsStaff
+from tablib import Dataset
+from .models import Census
+from .resources import CensusResource
+from .forms import NewCensusForm, ImportCensusForm
+from .admin import CensusAdmin
 from rest_framework import generics
 from rest_framework.response import Response
-from django.shortcuts import  render, redirect
-from django.http import HttpResponseForbidden
 from rest_framework.status import (
         HTTP_201_CREATED as ST_201,
         HTTP_204_NO_CONTENT as ST_204,
@@ -11,16 +27,10 @@ from rest_framework.status import (
         HTTP_401_UNAUTHORIZED as ST_401,
         HTTP_409_CONFLICT as ST_409
 )
-
-from base.perms import UserIsStaff
-from .models import Census
 import csv
-from django.http import HttpResponse
-from .forms import NewCensusForm
-from django.template import loader
-from django.core.exceptions import ValidationError
-from django.http import HttpResponseBadRequest
 import json
+import io
+
 
 def export_census(request):
     selected_ids = request.GET.get('ids', '')
@@ -30,7 +40,7 @@ def export_census(request):
         return HttpResponseBadRequest(json.dumps({'error': 'Invalid IDs provided'}), content_type='application/json')
 
     try:
-        census_list = Census.objects.filter(id__in=selected_ids)
+        census_list = Census.objects.all()
     except ValidationError:
         return HttpResponseBadRequest(json.dumps({'error': 'Invalid IDs provided'}), content_type='application/json')
 
@@ -38,12 +48,58 @@ def export_census(request):
     response['Content-Disposition'] = 'attachment; filename="census_export.csv"'
 
     writer = csv.writer(response)
-    writer.writerow(['Voting ID', 'Voter ID'])
+    writer.writerow(['voting_id', 'voter_id'])
 
     for census in census_list:
         writer.writerow([census.voting_id, census.voter_id])
 
     return response
+
+@csrf_exempt
+def import_census(request):
+    if not request.user.is_staff:
+        return HttpResponseForbidden(loader.get_template('403.html').render({}, request))
+
+    if request.method == 'POST':
+        form = ImportCensusForm(request.POST, request.FILES)
+        if form.is_valid():
+            new_census = request.FILES['csv_file']
+            dataset = Dataset()
+
+            # Cargar datos desde el CSV
+            imported_data = dataset.load(new_census.read(), format='csv', headers=False)
+
+            # Iterar sobre los datos e insertar o actualizar los registros
+            for row in imported_data:
+                voting_id = row[0]
+                voter_id = row[1]
+
+                # Verificar si ya existe un registro con el mismo voting_id y voter_id
+                existing_record, created = Census.objects.get_or_create(voting_id=voting_id, voter_id=voter_id)
+
+                if not created:
+                    # Si existe, actualizamos el registro
+                    existing_record.save()
+
+            messages.success(request, 'Census data imported successfully.')
+            return HttpResponseRedirect(request.path)
+
+        else:
+            messages.error(request, 'Error in the form submission. Please check the file.')
+
+    else:
+        form = ImportCensusForm()
+
+    return render(request, 'import_census.html', {'form': form})
+
+
+def all_census(request):
+    if not request.user.is_staff:
+        template = loader.get_template('403.html')
+        return HttpResponseForbidden(template.render({}, request))
+    else:
+        censuses = Census.objects.all()
+        return render(request, 'all_census.html', {'censuses': censuses, 'title': 'Lista de Censos'})
 
 
 class CensusCreate(generics.ListCreateAPIView):
@@ -104,11 +160,3 @@ def new_census_form(request):
         'form': form,
         'title': 'Nuevo Censo',
     })
-
-def all_census(request):
-    if not request.user.is_staff:
-        template = loader.get_template('403.html')
-        return HttpResponseForbidden(template.render({}, request))
-    else:
-        censuses = Census.objects.all()
-        return render(request, 'all_census.html', {'censuses': censuses, 'title': 'Lista de Censos'})
