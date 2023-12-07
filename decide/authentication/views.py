@@ -91,3 +91,39 @@ class RegisterView(APIView):
         except IntegrityError:
             return Response({}, status=HTTP_400_BAD_REQUEST)
         return Response({'user_pk': user.pk, 'token': token.key}, HTTP_201_CREATED)
+
+class RegisterUserView(APIView):
+    def get(self, request):
+        return render(request, 'register.html')
+    
+    def post(self, request):
+        username = request.data.get('username', '')
+        pwd = request.data.get('password', '')
+        pwd_confirm = request.data.get('password_confirm', '')
+        email = request.data.get('email', '')
+        errors = []
+
+        if not username or not pwd or not pwd_confirm or not email:
+            errors.append('All fields are required.')
+
+        if User.objects.filter(username=username).exists():
+            errors.append('The username is already in use.')
+
+        if User.objects.filter(email=email).exists():
+            errors.append('This email is already registered.')
+
+        if pwd != pwd_confirm:
+            errors.append('The passwords do not match.')
+
+        if errors:
+            return render(request, 'register.html', {'errors': errors})
+
+        try:
+            user = User(username=username)
+            user.set_password(pwd)
+            user.save()
+            token, _ = Token.objects.get_or_create(user=user)
+            message = 'Account successfully created.'
+        except IntegrityError:
+            return Response({}, status=HTTP_400_BAD_REQUEST)
+        return render(request, 'login.html', {'message': message})

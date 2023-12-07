@@ -1,13 +1,112 @@
-{% extends 'base.html' %}
+{% load socialaccount %}
 
-{% block content %}
-<h1>Registro</h1>
+<!DOCTYPE html>
+<html lang="es">
 
-<form action="{% url 'register' %}" method="post">
-    {% csrf_token %}
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Login</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f4;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+        }
 
-    {{ form.as_p }}
+        .login-container {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+            width: 300px;
+        }
 
-    <input type="submit" value="Registrarse">
-</form>
-{% endblock %}
+        h1 {
+            text-align: center;
+            color: #333;
+        }
+
+        form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        input {
+            margin: 10px 0;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        input[type="submit"] {
+            background-color: #4caf50;
+            color: white;
+            cursor: pointer;
+        }
+
+        input[type="submit"]:hover {
+            background-color: #45a049;
+        }
+
+        .google-login {
+            margin-top: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .google-button {
+            background-color: #4285F4;
+            color: #fff;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+        }
+
+        .google-icon {
+            margin-right: 10px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="login-container">
+        <h1>Register</h1>
+
+        {% if errors %}
+          <ul>
+            {% for error in errors %}
+              <li>{{ error }}</li>
+            {% endfor %}
+          </ul>
+        {% endif %}
+
+        <form action="{% url 'register_user' %}" method="post">
+            {% csrf_token %}
+            <label for="email">Email:</label>
+            <input type="email" name="email" id="email" placeholder="Enter your email">
+
+            <label for="username">Username:</label>
+            <input type="text" name="username" id="username" placeholder="Choose a username">
+
+            <label for="password">Password:</label>
+            <input type="password" name="password" id="password" placeholder="Enter your password">
+
+            <label for="password_confirm">Repeat Password:</label>
+            <input type="password" name="password_confirm" id="password_confirm" placeholder="Repeat your password">
+            <input type="submit" value="Register">
+        </form>
+        <p>Already have an account? <a href="{% url 'signin' %}">Log in</a></p>
+    </div>
+</body>
+
+</html>
