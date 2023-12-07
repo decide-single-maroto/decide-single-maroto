@@ -38,6 +38,8 @@ class SigninView(TemplateView):
     
     def get(self, request):
         form_class = LoginForm(None)
+        if request.user.is_authenticated:
+            return redirect("/base")
         return render(request, 'login.html', {'form': form_class, 'msg': None})
     
 class MenuView(TemplateView):
