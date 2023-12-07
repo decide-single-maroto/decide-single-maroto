@@ -39,7 +39,7 @@ class SigninView(TemplateView):
     def get(self, request):
         form_class = LoginForm(None)
         if request.user.is_authenticated:
-            return redirect("/base")
+            return render(request, 'base.html')
         return render(request, 'login.html', {'form': form_class, 'msg': None})
     
 class MenuView(TemplateView):
@@ -55,7 +55,6 @@ class GetUserView(APIView):
         key = request.data.get('token', '')
         tk = get_object_or_404(Token, key=key)
         return Response(UserSerializer(tk.user, many=False).data)
-
 
 class LogoutView(View):
     def get(self, request):

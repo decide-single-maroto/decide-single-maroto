@@ -9,6 +9,6 @@ urlpatterns = [
     path('logout/', LogoutView.as_view(), name='logout'),
     path('getuser/', GetUserView.as_view()),
     path('register/', RegisterView.as_view(), name='register'),
-    path('singup/', RegisterUserView.as_view(), name='register_user'),
+    path('signup/', RegisterUserView.as_view(), name='register_user'),
     path('', include('allauth.urls')),
 ]
