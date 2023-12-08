@@ -1,10 +1,12 @@
 from import_export.admin import ImportMixin
+from django.db import transaction
 from django.db.utils import IntegrityError
 from django.core.exceptions import ObjectDoesNotExist
 from django.core.exceptions import ValidationError
-from django.shortcuts import  render, redirect
+from django.shortcuts import  render, redirect, get_object_or_404
 from django.contrib import messages
 from django.contrib import admin
+from django.contrib.auth.models import User
 from django.template import loader
 from django.template import loader
 from django.views.decorators.csrf import csrf_exempt
@@ -15,6 +17,7 @@ from django.http import HttpResponseRedirect
 from base.perms import UserIsStaff
 from tablib import Dataset
 from .models import Census
+from voting.models import Voting
 from .resources import CensusResource
 from .forms import NewCensusForm, ImportCensusForm
 from .admin import CensusAdmin
@@ -32,6 +35,30 @@ import json
 import io
 
 
+
+def all_census(request):
+    census_list = Census.objects.all()
+
+    context = {'census_list': census_list}
+
+    return render(request, 'all_census.html', context)
+
+def delete_census(request):
+    if request.method == 'POST':
+        census_ids = request.POST.get('selected_censuses', '').split(',')
+        if not census_ids or not census_ids[0]:
+            messages.error(request, 'Debes seleccionar al menos un censo para eliminar.')
+            return redirect('all_census')
+
+        censuses = Census.objects.filter(id__in=census_ids)
+        if not censuses.exists():
+            messages.error(request, 'No existen censos con los IDs proporcionados.')
+        else:
+            censuses.delete()
+            messages.success(request, 'Censos eliminados correctamente.')
+
+    return redirect('all_census')
+
 def export_census(request):
     selected_ids = request.GET.get('ids', '')
     try:
@@ -39,10 +66,15 @@ def export_census(request):
     except ValueError:
         return HttpResponseBadRequest(json.dumps({'error': 'Invalid IDs provided'}), content_type='application/json')
 
-    try:
+    if not selected_ids:
+        # If no IDs are selected, export all census data
         census_list = Census.objects.all()
-    except ValidationError:
-        return HttpResponseBadRequest(json.dumps({'error': 'Invalid IDs provided'}), content_type='application/json')
+    else:
+        try:
+            # Filter the census based on the selected IDs
+            census_list = Census.objects.filter(id__in=selected_ids)
+        except IntegrityError:
+            return HttpResponseBadRequest(json.dumps({'error': 'Invalid IDs provided'}), content_type='application/json')
 
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename="census_export.csv"'
@@ -55,52 +87,73 @@ def export_census(request):
 
     return response
 
-@csrf_exempt
+def validate_ids(voting_id, voter_id):
+    if not Voting.objects.filter(id=voting_id).exists():
+        return False
+
+    if not User.objects.filter(id=voter_id).exists():
+        return False
+
+    return True
+
+def validate_and_read_csv(csv_file):
+    try:
+        # Decodificar el archivo CSV y crear un lector de CSV
+        dataset = csv_file.read().decode('utf-8')
+        io_string = io.StringIO(dataset)
+        csv_reader = csv.reader(io_string, delimiter=',')
+        
+        # Leer la primera línea del archivo CSV (encabezados)
+        headers = next(csv_reader)
+        
+        # Verificar que los encabezados son correctos
+        if len(headers) != 2 or headers[0] != 'voting_id' or headers[1] != 'voter_id':
+            return None, 'El archivo CSV debe tener dos columnas: voting_id y voter_id.'
+
+        new_census_list = []
+        for row in csv_reader:
+            try:
+                voting_id = int(row[0])
+                voter_id = int(row[1])
+            except ValueError:
+                return None, 'Todos los valores deben ser enteros.'
+
+            if not validate_ids(voting_id, voter_id):
+                return None, 'El archivo contiene datos no existentes en la base de datos.'
+            elif Census.objects.filter(voting_id=voting_id, voter_id=voter_id).exists():
+                return None, 'El archivo contiene censos ya existentes.'
+            else:
+                # Crear un nuevo objeto Census
+                new_census = Census(voting_id=voting_id, voter_id=voter_id)
+                new_census_list.append(new_census)
+
+        return new_census_list, None
+    except Exception as e:
+        return None, f'Error al leer el archivo CSV: {str(e)}'
+
 def import_census(request):
-    if not request.user.is_staff:
-        return HttpResponseForbidden(loader.get_template('403.html').render({}, request))
-
+    form = ImportCensusForm(request.POST or None, request.FILES or None)
     if request.method == 'POST':
-        form = ImportCensusForm(request.POST, request.FILES)
-        if form.is_valid():
-            new_census = request.FILES['csv_file']
-            dataset = Dataset()
-
-            # Cargar datos desde el CSV
-            imported_data = dataset.load(new_census.read(), format='csv', headers=False)
-
-            # Iterar sobre los datos e insertar o actualizar los registros
-            for row in imported_data:
-                voting_id = row[0]
-                voter_id = row[1]
-
-                # Verificar si ya existe un registro con el mismo voting_id y voter_id
-                existing_record, created = Census.objects.get_or_create(voting_id=voting_id, voter_id=voter_id)
-
-                if not created:
-                    # Si existe, actualizamos el registro
-                    existing_record.save()
-
-            messages.success(request, 'Census data imported successfully.')
-            return HttpResponseRedirect(request.path)
-
+        csv_file = request.FILES.get('csv_file')
+        if not csv_file:
+            messages.error(request, 'No se ha subido ningún archivo CSV')
+            return redirect('all_census')
+        elif not csv_file.name.endswith('.csv'):
+            messages.error(request, 'El archivo debe ser un archivo CSV.')
+            return redirect('all_census')
         else:
-            messages.error(request, 'Error in the form submission. Please check the file.')
+            new_census_list, error = validate_and_read_csv(csv_file)
+            if error:
+                messages.error(request, error)
+                return redirect('all_census')
 
-    else:
-        form = ImportCensusForm()
+            messages.success(request, 'Censo importado correctamente.')
+            with transaction.atomic():
+                Census.objects.bulk_create(new_census_list)
 
-    return render(request, 'import_census.html', {'form': form})
+            return redirect('all_census')
 
-
-def all_census(request):
-    if not request.user.is_staff:
-        template = loader.get_template('403.html')
-        return HttpResponseForbidden(template.render({}, request))
-    else:
-        censuses = Census.objects.all()
-        return render(request, 'all_census.html', {'censuses': censuses, 'title': 'Lista de Censos'})
-
+    return redirect('all_census')
 
 class CensusCreate(generics.ListCreateAPIView):
     permission_classes = (UserIsStaff,)

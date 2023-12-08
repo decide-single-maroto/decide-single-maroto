@@ -4,69 +4,142 @@
     <div class="container mt-5">
         <h2>{{ title }}</h2>
 
-        <form action="{% url 'export_census' %}" method="get">
-            <button type="submit" class="btn btn-primary">Exportar Censo</button>
-        </form>
-
-        <form method="post" enctype="multipart/form-data">
-            {% csrf_token %}
-            Seleccionar archivo: <input type="file" name="csv_file">
-            <button type="submit" class="btn btn-success" id="importButton">Importar Censo</button>
-        </form>
-        
-
         {% if messages %}
             {% for message in messages %}
-                <div class="alert alert-{{ message.tags }}" role="alert">
-                    <p>{% if message.tags %} class="" {% endif %}>{{ message }}</p>
+                <div class="alert alert-dismissible fade show mt-5" role="alert" 
+                    style="font-size: 1.3em; 
+                    {% if message.tags == 'error' %}background-color: rgba(255, 0, 0, 0.5); color: white;{% else %}background-color: rgba(0, 255, 0, 0.5); color: black;{% endif %}"> 
+                    {{ message }}
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
                 </div>
             {% endfor %}
         {% endif %}
-                
-        <table class="table" id="censuses-table">
+
+        <form action="{% url 'import_census' %}" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="form-row">
+                <div class="form-group col-md-2">
+                    <input type="file" class="form-control-file" id="csvFile" name="csv_file">
+                </div>
+                <div class="form-group col-md-5">
+                    <button type="submit" class="btn btn-success">Importar Censo</button>
+                </div>
+            </div>
+        </form>
+
+        <form action="{% url 'export_census' %}" method="get" style="margin-bottom: 10px;">
+            <input type="hidden" id="selectedIds" name="ids" value="">
+            <button type="button" class="btn btn-primary" id="exportButton">Exportar Censo</button>
+        </form>
+        
+        <form method="POST" action="{% url 'delete_census' %}" style="margin-bottom: 10px;">
+            {% csrf_token %}
+            <input type="hidden" id="selectedCensuses" name="selected_censuses" value="">
+            <button type="submit" id="deleteButton" class="btn btn-danger">Eliminar censos</button>
+        </form>
+
+        
+
+        <table class="table" id="censuses-table" >
             <thead>
                 <tr>
-                    <th data-visible="false">Id</th>
+                    <th data-visible="true">Id</th>
                     <th data-sortable="true">Voting ID</th>
                     <th data-sortable="true">Voter ID</th>
-                    <!-- Agrega aquí más columnas según tus necesidades -->
+                    <th data-checkboxes="true"></th> <!-- Agregar columna para checkboxes -->
                 </tr>
             </thead>
             <tbody>
-                {% for census in censuses %}
+                {% for census in census_list %}
                     <tr>
                         <td>{{ census.id }}</td>
                         <td>{{ census.voting_id }}</td>
                         <td>{{ census.voter_id }}</td>
-                        <!-- Agrega aquí más columnas según tus necesidades -->
+                        <td></td> <!-- Checkbox para cada fila -->
                     </tr>
                 {% endfor %}
             </tbody>
         </table>
-    </div>
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+        <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+        <script src="https://cdn.datatables.net/1.11.5/js/jquery.dataTables.min.js"></script>
+        <script src="https://cdn.datatables.net/select/1.3.4/js/dataTables.select.min.js"></script>
 
-    <script>
-        jQuery(document).ready(function($) {
-            console.log('Documento listo');
+        <script>
+            $(document).ready(function() {
+                console.log('Documento listo');
 
-            $('#importButton').click(function() {
-                console.log('Botón importar clickeado');
+                // Inicializar DataTables con opciones adicionales, incluyendo la selección de filas con checkboxes
+                var table = $('#censuses-table').DataTable({
+                    "order": [[0, "asc"]],
+                    "select": {
+                        "style": "multi"
+                    },
+                    "columnDefs": [
+                        {
+                            "targets": [0],
+                            "visible": false,
+                            "searchable": false
+                        },
+                        {
+                            "targets": [3],
+                            "orderable": false,
+                            "searchable": false,
+                            "width": "1%",
+                            "className": "dt-body-center",
+                            "render": function (data, type, full, meta){
+                                return '<input type="checkbox" name="selected_censuses" value="' + full[0] + '">';
+                            }
+                        }
+                    ]
+                });
+
+                // Agregar evento de clic al botón de exportación
+                $('#exportButton').click(function() {
+                    // Obtener las filas seleccionadas
+                    var selectedRows = table.rows({ selected: true }).data().toArray();
+
+                    // Obtener los IDs de las filas seleccionadas
+                    var selectedIds = selectedRows.map(function(row) {
+                        return row[0];  // Suponiendo que la primera columna contiene el ID
+                    });
+
+                    // Si no hay filas seleccionadas, importar todas las filas
+                    if (selectedIds.length === 0) {
+                        var allRows = table.rows().data().toArray();
+                        selectedIds = allRows.map(function(row) {
+                            return row[0];  // Suponiendo que la primera columna contiene el ID
+                        });
+                    }
+
+                    // Establecer los IDs seleccionados en el campo oculto
+                   
+                $('#selectedIds').val(selectedIds.join(','));
+
+                // Enviar el formulario de exportación
+                $('form[action="{% url "export_census" %}"]').submit();
             });
 
-            // Agregar evento de clic a las filas
-            $('#censuses-table tbody').on('click', 'tr', function() {
+            $('#deleteButton').click(function(e) {
+                e.preventDefault();
+        
+                // Obtener los checkboxes seleccionados
+                var selectedCheckboxes = $('input[name="selected_censuses"]:checked');
+        
+                // Obtener los IDs de los censos seleccionados
+                var selectedIds = selectedCheckboxes.map(function() {
+                    return $(this).val();
+                }).get();
+        
+                // Añadir los IDs de los censos seleccionados al campo oculto
+                $('#selectedCensuses').val(selectedIds.join(','));
+        
+                // Enviar el formulario
+                $(this).closest('form').submit();
             });
-
-            // Inicializar DataTables con opciones adicionales
-            var table = $('#censuses-table').DataTable({
-                "order": [[0, "desc"]],
-                "deferRender": true,
-                "orderCellsTop": true,
-            });
-
+            
         });
     </script>
 {% endblock %}

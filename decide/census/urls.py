@@ -10,4 +10,5 @@ urlpatterns = [
     path('all_census/', views.all_census, name='all_census'),
     path('export_census/', views.export_census, name='export_census'),
     path('import_census/', views.import_census, name='import_census'),
+    path('delete_census/', views.delete_census, name='delete_census'),
 ]

@@ -10,6 +10,7 @@ class NewCensusForm(forms.ModelForm):
         fields = ('voting_id','voter_id')
 
 class ImportCensusForm(forms.Form):
+    csv_file = forms.FileField()
     class Meta:
         model = Census
         fields = ('voting_id','voter_id')
