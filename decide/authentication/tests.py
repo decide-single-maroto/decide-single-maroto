@@ -91,12 +91,12 @@ class AuthTestCase(APITestCase):
             self.assertContains(response, f'<li>{error}</li>', status_code=200)
 
     def test_register(self):
-        data_reg = {'email': 'reguser@reguser.com', 'username': 'reguser', 'password': '123', 'password_confirm': '123'}
+        data_reg = {'email': 'reguser@reguser.com', 'username': 'reguser', 'password': 'password123', 'password_confirm': 'password123'}
         response_register = self.client.post('/authentication/signup', data_reg, format='json')
 
         self.assertEqual(response_register.status_code, 301)
 
-        data_log = {'username': 'reguser', 'password': '123'}
+        data_log = {'username': 'reguser', 'password': 'password123'}
         response_login = self.client.post('/', data_log, format='json')
 
         self.assertEqual(response_login.status_code, 200)
@@ -109,15 +109,39 @@ class AuthTestCase(APITestCase):
         self.assert_errors_in_response(response, expected_errors)
 
     def test_duplicated_username(self):
-        data_reg = {'email': 'duplicated@reguser.com', 'username': 'duplicated', 'password': '123', 'password_confirm': '123'}
+        data_reg = {'email': 'duplicated@reguser.com', 'username': 'duplicated', 'password': 'password123', 'password_confirm': 'password123'}
         response_register = self.client.post(reverse('register_user'), data_reg, format='json')
         self.assertEqual(response_register.status_code, 200)
 
-        data_reg_duplicated = {'email': 'duplicated2@reguser.com', 'username': 'duplicated', 'password': '123', 'password_confirm': '123'}
+        data_reg_duplicated = {'email': 'duplicated2@reguser.com', 'username': 'duplicated', 'password': 'password123', 'password_confirm': 'password123'}
         response_register_duplicated = self.client.post(reverse('register_user'), data_reg_duplicated, format='json')
-        self.assertEqual(response_register_duplicated.status_code, 200)  # Debería devolver la página de registro con errores
+        self.assertEqual(response_register_duplicated.status_code, 200) 
         expected_errors = ['The username is already in use.']
         self.assert_errors_in_response(response_register_duplicated, expected_errors)
+
+    def test_password_mismatch(self):
+        data = {
+            'email': 'reguser@user.com', 
+            'username': 'reguser', 
+            'password': 'password123', 
+            'password_confirm': 'password456'
+        }
+        response = self.client.post(reverse('register_user'), data, format='json')
+        self.assertEqual(response.status_code, 200)
+        expected_errors = ['The passwords do not match.']
+        self.assert_errors_in_response(response, expected_errors)
+
+    def test_password_short(self):
+        data = {
+            'email': 'reguser@user.com', 
+            'username': 'reguser', 
+            'password': '123', 
+            'password_confirm': '123'
+        }
+        response = self.client.post(reverse('register_user'), data, format='json')
+        self.assertEqual(response.status_code, 200)
+        expected_errors = ['The password must have 8 characters at least.']
+        self.assert_errors_in_response(response, expected_errors)
 
 
 
