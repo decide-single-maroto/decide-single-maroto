@@ -13,6 +13,8 @@ from django.shortcuts import get_object_or_404, render, redirect
 from django.views.generic import TemplateView, View
 from django.contrib.auth import authenticate, login, logout
 
+from django.contrib.auth import get_user_model
+
 from .forms import LoginForm
 
 from .serializers import UserSerializer
@@ -96,10 +98,14 @@ class RegisterUserView(APIView):
         return render(request, 'register.html')
     
     def post(self, request):
+        email = request.data.get('email', '')
+
         username = request.data.get('username', '')
         pwd = request.data.get('password', '')
         pwd_confirm = request.data.get('password_confirm', '')
         email = request.data.get('email', '')
+
+        User = get_user_model()
         errors = []
 
         if not username or not pwd or not pwd_confirm or not email:
@@ -108,11 +114,11 @@ class RegisterUserView(APIView):
         if User.objects.filter(username=username).exists():
             errors.append('The username is already in use.')
 
-        if User.objects.filter(email=email).exists():
-            errors.append('This email is already registered.')
-
         if pwd != pwd_confirm:
             errors.append('The passwords do not match.')
+
+        if len(pwd) < 8:
+            errors.append('The password must have 8 characters at least.')
 
         if errors:
             return render(request, 'register.html', {'errors': errors})
