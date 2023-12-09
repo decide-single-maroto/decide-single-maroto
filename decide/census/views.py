@@ -149,9 +149,12 @@ def import_census(request):
                 messages.error(request, error)
                 return redirect('all_census')
 
+            # Verificar si cada censo ya existe antes de agregarlo a new_census_list
+            unique_census_list = [census for census in new_census_list if not Census.objects.filter(voting_id=census.voting_id, voter_id=census.voter_id).exists()]
+
             messages.success(request, 'Censo importado correctamente.')
             with transaction.atomic():
-                Census.objects.bulk_create(new_census_list)
+                Census.objects.bulk_create(unique_census_list)
 
             return redirect('all_census')
 

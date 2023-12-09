@@ -123,31 +123,29 @@
             });
 
             $('#deleteButton').click(function(e) {
-                e.preventDefault();
-        
                 // Obtener los checkboxes seleccionados
                 var selectedCheckboxes = $('input[name="selected_censuses"]:checked');
-        
+            
                 // Obtener los IDs de los censos seleccionados
                 var selectedIds = selectedCheckboxes.map(function() {
                     return $(this).val();
                 }).get();
-        
-                // Añadir los IDs de los censos seleccionados al campo oculto
-                $('#selectedCensuses').val(selectedIds.join(','));
-        
-                // Enviar el formulario
-                $(this).closest('form').submit();
-            });
-
-            document.getElementById('deleteButton').addEventListener('click', function(e) {
-                let selectedCensuses = document.getElementById('selectedCensuses').value;
-                if (!selectedCensuses) {
-                    let confirmDelete = confirm('No has seleccionado ningún censo. ¿Quieres eliminar todos los censos?');
+            
+                // Si no se seleccionó ningún censo, mostrar un cuadro de diálogo de confirmación
+                if (selectedIds.length === 0) {
+                    var confirmDelete = confirm('No has seleccionado ningún censo. ¿Quieres eliminar todos los censos?');
                     if (!confirmDelete) {
+                        // Si el usuario cancela, evitar el envío del formulario
                         e.preventDefault();
+                        return;
                     }
                 }
+            
+                // Añadir los IDs de los censos seleccionados al campo oculto
+                $('#selectedCensuses').val(selectedIds.join(','));
+            
+                // Enviar el formulario
+                $(this).closest('form').submit();
             });
             
         });
