@@ -139,6 +139,16 @@
                 // Enviar el formulario
                 $(this).closest('form').submit();
             });
+
+            document.getElementById('deleteButton').addEventListener('click', function(e) {
+                let selectedCensuses = document.getElementById('selectedCensuses').value;
+                if (!selectedCensuses) {
+                    let confirmDelete = confirm('No has seleccionado ningún censo. ¿Quieres eliminar todos los censos?');
+                    if (!confirmDelete) {
+                        e.preventDefault();
+                    }
+                }
+            });
             
         });
     </script>

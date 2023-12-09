@@ -47,7 +47,9 @@ def delete_census(request):
     if request.method == 'POST':
         census_ids = request.POST.get('selected_censuses', '').split(',')
         if not census_ids or not census_ids[0]:
-            messages.error(request, 'Debes seleccionar al menos un censo para eliminar.')
+            # No se seleccionó ningún censo, eliminar todos
+            Census.objects.all().delete()
+            messages.success(request, 'Todos los censos han sido eliminados.')
             return redirect('all_census')
 
         censuses = Census.objects.filter(id__in=census_ids)
