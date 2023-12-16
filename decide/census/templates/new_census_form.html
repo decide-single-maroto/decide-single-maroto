@@ -1,0 +1,57 @@
+{% extends 'base.html' %}
+
+{% block title %} {{ title }} {% endblock %}
+
+{% block content %}
+
+    <h1 class="mb-6 text-3xl" style="max-width: 100%; margin-left: 403px;"> {{ title }}</h1>
+
+    
+
+    <div class="container mt-5">
+
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-dismissible fade show mt-5" role="alert" 
+                    style="font-size: 1.3em; 
+                    {% if message.tag == 'error' %}background-color: rgba(255, 0, 0, 0.5); color: white;{% else %}background-color: rgba(0, 255, 0, 0.5); color: black;{% endif %}"> 
+                    {{ message.message }}
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <form method="post" action="." enctype="multipart/form-data">
+            {% csrf_token %}
+        
+            <div class="space-y-4" >
+                {% for field in form %}
+                    <p>
+                        {{ field.label_tag }} {{ field }}
+                        {% if field.help_text %}
+                            <small class="form-text text-muted">{{ field.help_text }}</small>
+                        {% endif %}
+                    </p>
+                {% endfor %}
+            </div>
+        
+            <button class="btn btn-primary">Crear Censo</button>
+        </form>
+    </div>
+    <style>
+        /* Estilos específicos del formulario */
+        form input[type="text"],
+        form input[type="email"],
+        form textarea,
+        form select {
+            width: 100%; /* Ajusta el ancho según tus necesidades */
+            padding: 10px;
+            margin-bottom: 10px;
+            box-sizing: border-box;
+            border: 2px solid #ddd; /* Color del borde */
+            border-radius: 8px; /* Radio del borde para que sea redondeado */
+        }
+    </style>
+{% endblock %}

@@ -8,8 +8,8 @@
             {% for message in messages %}
                 <div class="alert alert-dismissible fade show mt-5" role="alert" 
                     style="font-size: 1.3em; 
-                    {% if message.tags == 'error' %}background-color: rgba(255, 0, 0, 0.5); color: white;{% else %}background-color: rgba(0, 255, 0, 0.5); color: black;{% endif %}"> 
-                    {{ message }}
+                    {% if message.tag == 'error' %}background-color: rgba(255, 0, 0, 0.5); color: white;{% else %}background-color: rgba(0, 255, 0, 0.5); color: black;{% endif %}"> 
+                    {{ message.message }}
                     <button type="button" class="close" data-dismiss="alert" aria-label="Close">
                         <span aria-hidden="true">&times;</span>
                     </button>
