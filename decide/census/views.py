@@ -33,6 +33,7 @@ from rest_framework.status import (
 import csv
 import json
 import io
+from django.contrib.auth.decorators import login_required
 
 
 
@@ -52,15 +53,15 @@ def delete_census(request):
         if not census_ids or not census_ids[0]:
             # No se seleccionó ningún censo, eliminar todos
             Census.objects.all().delete()
-            request.session['all_census_messages'] = [{'message': 'Todos los censos han sido eliminados.', 'tag': 'success'}]
+            messages.success(request, 'Todos los censos han sido eliminados.')
             return redirect('all_census')
 
         censuses = Census.objects.filter(id__in=census_ids)
         if not censuses.exists():
-            request.session['all_census_messages'] = [{'message': 'No existen censos con los IDs proporcionados.', 'tag': 'error'}]
+            messages.error(request, 'No existen censos con los IDs proporcionados.')
         else:
             censuses.delete()
-            request.session['all_census_messages'] = [{'message': 'Censos eliminados correctamente.', 'tag': 'success'}]
+            messages.success(request, 'Censos eliminados correctamente.')
 
     return redirect('all_census')
 
@@ -141,21 +142,21 @@ def import_census(request):
     if request.method == 'POST':
         csv_file = request.FILES.get('csv_file')
         if not csv_file:
-            request.session['all_census_messages'] = [{'message': 'No se ha subido ningún archivo CSV', 'tag': 'error'}]
+            messages.error(request, 'No se ha subido ningún archivo CSV')
             return redirect('all_census')
         elif not csv_file.name.endswith('.csv'):
-            request.session['all_census_messages'] = [{'message': 'El archivo debe ser un archivo CSV.', 'tag': 'error'}]
+            messages.error(request, 'El archivo debe ser un archivo CSV.')
             return redirect('all_census')
         else:
             new_census_list, error = validate_and_read_csv(csv_file)
             if error:
-                request.session['all_census_messages'] = [{'message': error, 'tag': 'error'}]
+                messages.error(request, error)
                 return redirect('all_census')
 
             # Verificar si cada censo ya existe antes de agregarlo a new_census_list
             unique_census_list = [census for census in new_census_list if not Census.objects.filter(voting_id=census.voting_id, voter_id=census.voter_id).exists()]
 
-            request.session['all_census_messages'] = [{'message': 'Censo importado correctamente.', 'tag': 'success'}]
+            messages.success(request, 'Censo importado correctamente.')
             with transaction.atomic():
                 Census.objects.bulk_create(unique_census_list)
 
@@ -184,7 +185,7 @@ class CensusCreate(generics.ListCreateAPIView):
 
 
 class CensusDetail(generics.RetrieveDestroyAPIView):
-
+    
     def destroy(self, request, voting_id, *args, **kwargs):
         voters = request.data.get('voters')
         census = Census.objects.filter(voting_id=voting_id, voter_id__in=voters)
@@ -198,8 +199,7 @@ class CensusDetail(generics.RetrieveDestroyAPIView):
         except ObjectDoesNotExist:
             return Response('Invalid voter', status=ST_401)
         return Response('Valid voter')
-
-
+    
 def new_census_form(request):
     form = NewCensusForm()
     
@@ -221,6 +221,7 @@ def new_census_form(request):
                     item = form.save(commit=False)
                     item.save()
                     request.session['form_messages'] = [{'message': 'Censo creado exitosamente.', 'tag': 'success'}]
+                    return redirect('new_census')
                 except IntegrityError:
                     print("IntegrityError caught")
                     request.session['form_messages'] = [{'message': 'Censos con este Voting ID o Voter Id ya existen', 'tag': 'error'}]
@@ -232,7 +233,6 @@ def new_census_form(request):
                         request.session['form_messages'] = [{'message': 'Censos con este Voting ID o Voter ID ya existen', 'tag': 'error'}]
 
     messages = request.session.get('form_messages', None)
-    print(messages)
     response = render(request, 'new_census_form.html', {
         'form': form,
         'title': 'Nuevo Censo',
