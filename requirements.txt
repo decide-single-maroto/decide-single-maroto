@@ -12,3 +12,5 @@ pynose==1.4.8
 django-rest-swagger==2.2.0
 selenium==4.7.2
 django-allauth
+gunicorn==21.2.0
+dj-database-url == 2.1.0
