@@ -33,13 +33,17 @@ from rest_framework.status import (
 import csv
 import json
 import io
+from django.contrib.auth.decorators import login_required
 
 
 
 def all_census(request):
     census_list = Census.objects.all()
 
-    context = {'census_list': census_list}
+    context = {
+        'census_list': census_list,
+        'messages': request.session.pop('all_census_messages', None),
+    }
 
     return render(request, 'all_census.html', context)
 
@@ -76,7 +80,7 @@ def export_census(request):
             # Filter the census based on the selected IDs
             census_list = Census.objects.filter(id__in=selected_ids)
         except IntegrityError:
-            return HttpResponseBadRequest(json.dumps({'error': 'Invalid IDs provided'}), content_type='application/json')
+            return HttpResponseBadRequest(json.dumps({'error': 'IDs no válidos'}), content_type='application/json')
 
     response = HttpResponse(content_type='text/csv')
     response['Content-Disposition'] = 'attachment; filename="census_export.csv"'
@@ -181,7 +185,7 @@ class CensusCreate(generics.ListCreateAPIView):
 
 
 class CensusDetail(generics.RetrieveDestroyAPIView):
-
+    
     def destroy(self, request, voting_id, *args, **kwargs):
         voters = request.data.get('voters')
         census = Census.objects.filter(voting_id=voting_id, voter_id__in=voters)
@@ -195,10 +199,10 @@ class CensusDetail(generics.RetrieveDestroyAPIView):
         except ObjectDoesNotExist:
             return Response('Invalid voter', status=ST_401)
         return Response('Valid voter')
-
-
+    
 def new_census_form(request):
     form = NewCensusForm()
+    
     if not request.user.is_staff:
         template = loader.get_template('403.html')
         return HttpResponseForbidden(template.render({}, request))
@@ -207,14 +211,35 @@ def new_census_form(request):
         form = NewCensusForm(request.POST, request.FILES)
 
         if form.is_valid():
-            item=form.save(commit=False)
-            item.save()
+            voting_id = form.cleaned_data.get('voting_id')
+            voter_id = form.cleaned_data.get('voter_id')
 
-            return redirect('/base')
+            if not validate_ids(voting_id, voter_id):
+                request.session['form_messages'] = [{'message': 'Voting ID o Voter ID inválidos.', 'tag': 'error'}]
+            else:
+                try:
+                    item = form.save(commit=False)
+                    item.save()
+                    request.session['form_messages'] = [{'message': 'Censo creado exitosamente.', 'tag': 'success'}]
+                    return redirect('new_census')
+                except IntegrityError:
+                    print("IntegrityError caught")
+                    request.session['form_messages'] = [{'message': 'Censos con este Voting ID o Voter Id ya existen', 'tag': 'error'}]
         else:
-            form = NewCensusForm()
+            request.session['form_messages'] = [{'message': f'{field.capitalize()}: {error}', 'tag': 'error'} for field, errors in form.errors.items() for error in errors]
+            if '__all__' in form.errors:
+                for error in form.errors['__all__']:
+                    if 'already exists' in error:
+                        request.session['form_messages'] = [{'message': 'Censos con este Voting ID o Voter ID ya existen', 'tag': 'error'}]
 
-    return render(request, 'form.html', {
+    messages = request.session.get('form_messages', None)
+    response = render(request, 'new_census_form.html', {
         'form': form,
         'title': 'Nuevo Censo',
+        'messages': messages,
     })
+
+    if 'form_messages' in request.session:
+        del request.session['form_messages']
+
+    return response

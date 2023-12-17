@@ -20,6 +20,7 @@ from voting.models import Voting, Question
 from base.tests import BaseTestCase
 from datetime import datetime
 from django.contrib.auth import get_user_model
+from django.contrib.sessions.middleware import SessionMiddleware
 from django.test import Client
 from django.urls import reverse
 from .admin import CensusAdmin, VotingIdFilter
@@ -184,45 +185,57 @@ class CensusTest(StaticLiveServerTestCase):
         self.assertTrue(self.cleaner.current_url == self.live_server_url+"/admin/census/census/add")
 
 class CensusFormTest(TestCase):
-    
+    def setUp(self):
+        self.client = Client()
+        self.user = get_user_model().objects.create_user(username='adminadmin', password='adminadmin', is_staff=True, is_superuser=True)
+        self.client.force_login(self.user)
+        Census.objects.all().delete()  # Clear the database before each test
+
     def test_census_form_view(self):
-        self.client = Client()
-        self.user = get_user_model().objects.create_user(username = 'adminadmin', password='adminadmin', is_staff=True, is_superuser=True)
-        self.client.force_login(self.user)
-        
         url = reverse('new_census')
         response = self.client.get(url)
-        
-        self.assertTemplateUsed(response,'form.html')
-        self.assertContains(response,"voting_id")
-        
+        self.assertTemplateUsed(response, 'new_census_form.html')
+        self.assertContains(response, "voting_id")
+
     def test_census_form_no_admin(self):
+        # Create a non-admin user and log in as that user
+        non_admin_user = get_user_model().objects.create_user(username='nonadmin', password='nonadmin')
+        self.client.force_login(non_admin_user)
+
         url = reverse('new_census')
         response = self.client.get(url)
-        
-        self.assertEqual(response.status_code,403)
-        
-    def test_census_create(self):
-        self.client = Client()
-        self.user = get_user_model().objects.create_user(username = 'adminadmin', password='adminadmin', is_staff=True, is_superuser=True)
+        self.assertEqual(response.status_code, 403)
+
+        # Log back in as the admin user for the other tests
         self.client.force_login(self.user)
-        
+
+    def test_census_create(self):
+        # Arrange
+        question = Question.objects.create(desc='test question', cattegory='YES/NO')
+        Voting.objects.create(id=20, name='test', question=question)
+        User.objects.create(id=3, username='test', password='test')
+
         url = reverse('new_census')
         form_data = {
-            'voting_id': 1,
-            'voter_id':1,
+            'voting_id': 20,
+            'voter_id': 3,
         }
+
+        # Act: Post the form data and create a census
         response_post = self.client.post(url, data=form_data)
+
+        # Assert: Check the response status code and the created census
         self.assertEqual(response_post.status_code, 302)
-        
-        question = Census.objects.get(voting_id = 1)
-        self.assertEqual(question.voter_id,1)
-        
+        census = Census.objects.get(voting_id=20)
+        self.assertEqual(census.voter_id, 3)
+
+        # Act: Try to create another census with the same voting_id and voter_id
+        response_post = self.client.post(url, data=form_data)
+
+        # Assert: Check the response status code
+        self.assertEqual(response_post.status_code, 200)
+
     def test_census_create_with_errors(self):
-        self.client = Client()
-        self.user = get_user_model().objects.create_user(username = 'adminadmin', password='adminadmin', is_staff=True, is_superuser=True)
-        self.client.force_login(self.user)
-        
         form_data = {
             'voter_id': 1,
         }
@@ -230,6 +243,7 @@ class CensusFormTest(TestCase):
 
         self.assertFalse(form.is_valid())
         self.assertTrue('voting_id' in form.errors)
+        
 class VotingIdFilterTestCase(TestCase):
     def setUp(self):
         self.factory = RequestFactory()
@@ -285,8 +299,14 @@ class CensusActionsTest(TestCase):
         self.census1 = Census.objects.create(voting_id=self.voting.id, voter_id=self.user1.id)
         self.census2 = Census.objects.create(voting_id=self.voting.id, voter_id=self.user2.id)
 
+        self.factory = RequestFactory()
+        self.middleware = SessionMiddleware(lambda req: HttpResponse())
+
     def test_all_census(self):
         request = self.factory.get('/census/all_census/')
+        self.middleware.process_request(request)
+        request.session.save()
+
         request.user = self.user1
 
         response = all_census(request)
@@ -303,6 +323,9 @@ class CensusActionsTest(TestCase):
 
         # Crear una solicitud POST falsa
         request = self.factory.post('/census/delete_census/', {'selected_censuses': str(census.id)})
+        self.middleware.process_request(request)
+        request.session.save()
+
         request.user = self.user1
 
         response = delete_census(request)
@@ -313,6 +336,9 @@ class CensusActionsTest(TestCase):
     def test_delete_all_census(self, mock_messages):
         # Crear una solicitud POST falsa sin censos seleccionados
         request = self.factory.post('/census/delete_census/', {})
+        self.middleware.process_request(request)
+        request.session.save()
+
         request.user = self.user1
 
         response = delete_census(request)
@@ -324,6 +350,9 @@ class CensusActionsTest(TestCase):
     def test_delete_nonexistent_census(self, mock_messages):
         # Crear una solicitud POST falsa con un ID de censo inexistente
         request = self.factory.post('/census/delete_census/', {'selected_censuses': '999'})
+        self.middleware.process_request(request)
+        request.session.save()
+
         request.user = self.user1
 
         response = delete_census(request)
@@ -429,6 +458,9 @@ class CensusActionsTest(TestCase):
 
         # Crear una solicitud POST falsa
         request = self.factory.post('/census/import_census/', {'csv_file': csv_file_copy})
+        self.middleware.process_request(request)
+        request.session.save()
+
         request.user = self.user1
 
         # Configurar validate_and_read_csv para devolver un objeto Census
@@ -447,6 +479,9 @@ class CensusActionsTest(TestCase):
     def test_import_census_no_file_uploaded(self, mock_messages):
         # Crear una solicitud POST falsa sin archivo
         request = self.factory.post('/census/import_census/')
+        self.middleware.process_request(request)
+        request.session.save()
+
         request.user = self.user1
 
         # Llamar a la función import_census
@@ -465,6 +500,9 @@ class CensusActionsTest(TestCase):
 
         # Crear una solicitud POST falsa con el archivo no CSV
         request = self.factory.post('/census/import_census/', {'csv_file': non_csv_file})
+        self.middleware.process_request(request)
+        request.session.save()
+
         request.user = self.user1
 
         # Llamar a la función import_census

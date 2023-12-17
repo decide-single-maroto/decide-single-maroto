@@ -124,7 +124,7 @@ def new_voting(request):
     else:
         form = NewVotingForm()
 
-    return render(request, 'form.html', {
+    return render(request, 'voting_form.html', {
         'form': form,
         'title': 'Nueva Votación',
     })
@@ -150,7 +150,7 @@ def edit_voting(request, voting_id):
     else:
         form = EditVotingForm(instance=voting)
 
-    return render(request, 'form.html', {
+    return render(request, 'voting_form.html', {
         'form': form,
         'title': 'Modificar Votación',
     })
