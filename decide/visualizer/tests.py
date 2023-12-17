@@ -1,17 +1,11 @@
 from django.test import TestCase
 from base.tests import BaseTestCase
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
-
 from voting.models import Voting, Question
 from census.models import Census
-
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-
-import time
-
 from django.utils import timezone
-
 
 class VisualizerTestCase(StaticLiveServerTestCase):
 
@@ -28,63 +22,58 @@ class VisualizerTestCase(StaticLiveServerTestCase):
         self.driver.quit()
         self.base.tearDown()
 
+    def create_question(self, desc):
+        return Question.objects.create(desc=desc)
 
-    def test_visualizer_not_started(self):        
-        q = Question(desc='test question')
-        q.save()
-        v = Voting(name='test voting not started', question_id=q.id)
-        v.save()
+    def create_voting(self, name, start_date=None, end_date=None, question_id=None):
+        return Voting.objects.create(name=name, start_date=start_date, end_date=end_date, question_id=question_id)
 
-        response = self.driver.get(f'{self.live_server_url}/visualizer/{v.pk}/')
-        votingState = self.driver.find_element(By.TAG_NAME,"h2").text
+    def create_census(self, voter_id, voting_id):
+        return Census.objects.create(voter_id=voter_id, voting_id=voting_id)
 
-        self.assertTrue(votingState, "Voting not started")
+    def test_visualizer_not_started(self):
+        q = self.create_question('test question')
+        v = self.create_voting('test voting not started', question_id=q.id)
+
+        self.driver.get(f'{self.live_server_url}/visualizer/{v.pk}/')
+        voting_state = self.driver.find_element(By.TAG_NAME, "h2").text
+
+        self.assertTrue(voting_state, "Voting not started")
 
     def test_visualizer_started(self):
-        q = Question(desc = 'test question')
-        q.save()
-        v = Voting(name = 'test voting started', start_date = timezone.now(), question_id = q.id)
-        v.save()
+        q = self.create_question('test question')
+        v = self.create_voting('test voting started', start_date=timezone.now(), question_id=q.id)
 
-        response = self.driver.get(f'{self.live_server_url}/visualizer/{v.pk}')
-        votingState = self.driver.find_element(By.TAG_NAME, "h2").text
+        self.driver.get(f'{self.live_server_url}/visualizer/{v.pk}')
+        voting_state = self.driver.find_element(By.TAG_NAME, "h2").text
         
-        self.assertTrue(votingState, "Voting started")
+        self.assertTrue(voting_state, "Voting started")
 
     def test_visualizer_closed(self):
-        q = Question(desc = 'test question')
-        q.save()
-        v = Voting(name='test voting finished', end_date=timezone.now(), question_id = q.id)
-        v.save()
+        q = self.create_question('test question')
+        v = self.create_voting('test voting finished', end_date=timezone.now(), question_id=q.id)
 
-        response = self.driver.get(f'{self.live_server_url}/visualizer/{v.pk}')
-        votingState = self.driver.find_element(By.TAG_NAME, "h2").text
+        self.driver.get(f'{self.live_server_url}/visualizer/{v.pk}')
+        voting_state = self.driver.find_element(By.TAG_NAME, "h2").text
 
-        self.assertTrue(votingState, "Resultados:")
+        self.assertTrue(voting_state, "Resultados:")
 
-    def test_visualizerStarted_noCensus(self):
-        q = Question(desc = 'test question')
-        q.save()
-        v = Voting(name = 'test voting started without census', start_date = timezone.now(), question_id = q.id)
-        v.save()
+    def test_visualizer_started_no_census(self):
+        q = self.create_question('test question')
+        v = self.create_voting('test voting started without census', start_date=timezone.now(), question_id=q.id)
 
-        response = self.driver.get(f'{self.live_server_url}/visualizer/{v.pk}/')
-        votingState = self.driver.find_element(By.ID, "participation").text == "-"
+        self.driver.get(f'{self.live_server_url}/visualizer/{v.pk}/')
+        voting_state = self.driver.find_element(By.ID, "participation").text == "-"
 
-        self.assertTrue(votingState, "Voting started without census")
+        self.assertTrue(voting_state, "Voting started without census")
 
-    def test_visualizer_started_withCensus_withoutParticipation(self):        
-        question = Question(desc='test question')
-        question.save()
-        voting = Voting(name='test voting', start_date=timezone.now(), question_id=question.id)
-        voting.save()
+    def test_visualizer_started_with_census_without_participation(self):
+        q = self.create_question('test question')
+        v = self.create_voting('test voting', start_date=timezone.now(), question_id=q.id)
+        self.create_census(1, v.id)
+        self.create_census(2, v.id)
 
-        census1 = Census(voter_id=1, voting_id=voting.id)
-        census1.save()
-        census2 = Census(voter_id=2, voting_id=voting.id)
-        census2.save()
+        self.driver.get(f'{self.live_server_url}/visualizer/{v.pk}/')
+        voting_state = self.driver.find_element(By.ID, "participation").text == "0.0%"
 
-        self.driver.get(f'{self.live_server_url}/visualizer/{voting.pk}/')
-        votingState = self.driver.find_element(By.ID, "participation").text == "0.0%"
-
-        self.assertTrue(votingState, "Voting started with census and no participation")
+        self.assertTrue(voting_state, "Voting started with census and no participation")
