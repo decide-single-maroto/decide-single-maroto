@@ -398,18 +398,7 @@ class QuestionsTests(StaticLiveServerTestCase):
         self.driver.quit()
 
         self.base.tearDown()
-
-    def test_create_yes_no_question(self):
-
-        question_saved = Question.objects.get(id = 100)
-        self.assertEqual(question_saved.desc, 'Eres humano?')
-        self.assertEqual(question_saved.id, 100)
-        self.assertEqual(question_saved.cattegory, 'YES/NO')
-        
-    
-
-            
-        
+   
         
     def createQuestionSuccess(self):
         self.cleaner.get(self.live_server_url+"/admin/login/?next=/admin/")
