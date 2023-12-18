@@ -101,7 +101,7 @@ def validate_and_read_csv(csv_file):
 
         # Leer la primera línea del archivo CSV (encabezados)
         headers = next(csv_reader)
-        
+
         # Verificar que los encabezados son correctos
         if len(headers) != 2 or headers[0] != 'voting_id' or headers[1] != 'voter_id':
             return None, 'El archivo CSV debe tener dos columnas: voting_id y voter_id.'

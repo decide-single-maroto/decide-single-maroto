@@ -166,7 +166,7 @@ def new_auth(request):
     if not request.user.is_staff:
         template = loader.get_template('403.html')
         return HttpResponseForbidden(template.render({}, request))
-    
+
     if request.method == 'POST':
         form = NewAuthForm(request.POST, request.FILES)
         if form.is_valid():
