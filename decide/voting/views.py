@@ -161,7 +161,6 @@ def all_votings(request):
     else:
         votings = Voting.objects.all()
         return render(request, 'allVotings.html', {'votings': votings, 'title': 'Votaciones',})
-    
 
 def new_auth(request):
     if not request.user.is_staff:

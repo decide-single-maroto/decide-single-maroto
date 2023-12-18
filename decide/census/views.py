@@ -98,7 +98,7 @@ def validate_and_read_csv(csv_file):
         dataset = csv_file.read().decode('utf-8')
         io_string = io.StringIO(dataset)
         csv_reader = csv.reader(io_string, delimiter=',')
-        
+
         # Leer la primera línea del archivo CSV (encabezados)
         headers = next(csv_reader)
         
@@ -127,7 +127,7 @@ def validate_and_read_csv(csv_file):
         return None, f'Error al leer el archivo CSV: {str(e)}'
 
 def import_census(request):
-    form = ImportCensusForm(request.POST or None, request.FILES or None)
+    ImportCensusForm(request.POST or None, request.FILES or None)
     if request.method == 'POST':
         csv_file = request.FILES.get('csv_file')
         if not csv_file:
@@ -143,8 +143,8 @@ def import_census(request):
                 return redirect('all_census')
 
             # Verificar si cada censo ya existe antes de agregarlo a new_census_list
-            unique_census_list = [census for census in new_census_list 
-                                  if not Census.objects.filter(voting_id=census.voting_id, 
+            unique_census_list = [census for census in new_census_list
+                                  if not Census.objects.filter(voting_id=census.voting_id,
                                                                voter_id=census.voter_id).exists()]
 
             messages.success(request, 'Censo importado correctamente.')
@@ -217,7 +217,7 @@ def new_census_form(request):
                     print("IntegrityError caught")
                     request.session['form_messages'] = [{'message': 'Censos con este Voting ID o Voter Id ya existen', 'tag': 'error'}]
         else:
-            request.session['form_messages'] = [{'message': f'{field.capitalize()}: {error}', 'tag': 'error'} 
+            request.session['form_messages'] = [{'message': f'{field.capitalize()}: {error}', 'tag': 'error'}
                                                 for field, errors in form.errors.items() for error in errors]
             if '__all__' in form.errors:
                 for error in form.errors['__all__']:

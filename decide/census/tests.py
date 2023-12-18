@@ -367,7 +367,7 @@ class CensusActionsTest(TestCase):
         self.assertEqual(response['Content-Type'], 'text/csv')
 
         expected_content = f'voting_id,voter_id\r\n{self.voting.id},{self.user1.id}\r\n{self.voting.id},{self.user2.id}\r\n'
-        self.assertEqual(response.content.decode(), expected_content)  
+        self.assertEqual(response.content.decode(), expected_content)
 
     def test_export_census_selected_ids(self):
         # Crear una solicitud GET falsa con ids seleccionados
