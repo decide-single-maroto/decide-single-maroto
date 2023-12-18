@@ -10,7 +10,6 @@ on:
       - develop
       - master
       - feature/frontend-integration
-      
   workflow_call:
     secrets:
       CODACY_PROJECT_TOKEN:

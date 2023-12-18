@@ -1,8 +1,11 @@
+from import_export.admin import ImportExportModelAdmin
+
 from django.contrib import admin
 from django.http import HttpResponse
 from django.contrib.admin import SimpleListFilter
 import csv
 from .models import Census
+from .resources import CensusResource
 
 # Custom admin filter to allow filtering Census records by Voting ID
 class VotingIdFilter(SimpleListFilter):
@@ -19,7 +22,9 @@ class VotingIdFilter(SimpleListFilter):
             return queryset.filter(voting_id=value)
         return queryset
 
-class CensusAdmin(admin.ModelAdmin):
+
+class CensusAdmin(ImportExportModelAdmin):
+    resource_class = CensusResource
     list_display = ('voting_id', 'voter_id')
     list_filter = (VotingIdFilter, )
     search_fields = ('voter_id', )
@@ -31,15 +36,18 @@ class CensusAdmin(admin.ModelAdmin):
         response['Content-Disposition'] = 'attachment; filename="census_export.csv"'
 
         writer = csv.writer(response)
-        writer.writerow(['Voting ID', 'Voter ID'])
+        writer.writerow(['voting_id', 'voter_id'])
 
         for census in queryset:
-            writer.writerow([census.voting_id, census.voter_id])
+            voting_id = census.voting_id if census.voting_id is not None else ''
+            voter_id = census.voter_id if census.voter_id is not None else ''
+            writer.writerow([voting_id, voter_id])
 
         return response
 
     export_selected.short_description = "Export census"
 
-# Registrar el modelo
+
+
 admin.site.register(Census, CensusAdmin)
 

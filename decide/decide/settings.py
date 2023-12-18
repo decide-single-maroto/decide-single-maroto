@@ -52,6 +52,8 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
+
+    'import_export',
 ]
 
 SOCIALACCOUNT_LOGIN_ON_GET = True
@@ -115,7 +117,7 @@ ROOT_URLCONF = 'decide.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        'DIRS': [os.path.join(BASE_DIR, 'voting/templates'),],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -185,6 +187,7 @@ TEST_RUNNER = 'django_nose.NoseTestSuiteRunner'
 # https://docs.djangoproject.com/en/2.0/howto/static-files/
 
 STATIC_URL = '/static/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 # number of bits for the key, all auths should use the same number of bits
 KEYBITS = 256
@@ -208,3 +211,5 @@ if os.path.exists("config.jsonnet"):
 
 
 INSTALLED_APPS = INSTALLED_APPS + MODULES
+
+IMPORT_EXPORT_USE_TRANSACTIONS = True

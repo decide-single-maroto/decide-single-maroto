@@ -3,16 +3,18 @@ import itertools
 from django.utils import timezone
 from django.conf import settings
 from django.contrib.auth.models import User
+from django.urls import reverse
+from django.contrib.auth import get_user_model
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.test import TestCase
-from rest_framework.test import APIClient
-from rest_framework.test import APITestCase
+from django.test import Client
+
+from voting.forms import NewVotingForm, NewAuthForm
+from .forms import QuestionForm
 
 from selenium import webdriver
-from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.keys import Keys
 
 from base import mods
 from base.tests import BaseTestCase
@@ -22,9 +24,6 @@ from mixnet.mixcrypt import MixCrypt
 from mixnet.models import Auth
 from voting.models import Voting, Question, QuestionOption
 from datetime import datetime
-from django.urls import reverse
-
-
 class VotingTestCase(BaseTestCase):
 
     def test_update_voting_405(self):
@@ -468,3 +467,274 @@ class VotingModelTestCase(BaseTestCase):
     def testExist(self):
         v=Voting.objects.get(name='Votacion')
         self.assertEquals(v.question.options.all()[0].option, "opcion 1")
+
+class VotingFrontEndTestCase(TestCase):
+    def setUp(self):
+
+        self.client = Client()
+        self.user_admin = get_user_model().objects.create_user(username = 'adminadmin', password='adminadmin', is_staff=True, is_superuser=True)
+        self.user_no_admin = get_user_model().objects.create_user(username = 'noadmin', password='noadmin')
+
+        self.question = Question(desc='¿Pregunta de ejemplo?')
+        self.question.save()
+
+        self.auth = Auth(name = 'authDeEjmplo', url = 'http://localhost:8000')
+        self.auth.save()
+
+    def test_new_voting_view_with_non_staff_user(self):
+        self.client.force_login(self.user_no_admin)
+
+        response = self.client.get(reverse('new_voting'))
+
+        self.assertEqual(response.status_code, 403)
+        self.assertTemplateUsed(response, '403.html')
+
+    def test_new_voting_view_with_staff_user(self):
+        self.client.force_login(self.user_admin)
+
+        response = self.client.get(reverse('new_voting'))
+        self.assertEqual(response.status_code, 200)
+
+        self.assertIn('form', response.context)
+        form = response.context['form']
+
+        self.assertIsInstance(form, NewVotingForm)
+
+        selected_model = 'IDENTITY'
+
+        data = {
+            'id': 100,
+            'name': 'Nombre de la votación',
+            'desc': 'Descripción de la votación',
+            'question': Question.objects.create(desc='¿Pregunta de ejemplo?').id,
+            'auths': Auth.objects.create(name = 'authDeEjmplo', url = 'http://localhost:8000').id, 
+            'model': selected_model,
+            'seats': 0,
+        }
+
+        response_post = self.client.post(reverse('new_voting'), data)
+        self.assertEqual(response_post.status_code, 302)
+
+
+
+    def test_edit_voting_with_non_staff_user(self):
+        self.client.force_login(self.user_no_admin)
+
+        voting = Voting.objects.create(name='Votación de ejemplo', desc='Descripción de la votación', question = self.question, model='IDENTITY', seats=0)
+        voting.auths.set([self.auth])
+
+        response = self.client.get(reverse('edit_voting_detail', args=[voting.id]))
+
+        self.assertEqual(response.status_code, 403)
+        self.assertTemplateUsed(response, '403.html')
+
+    def test_edit_voting_with_staff_user(self):
+        self.client.force_login(self.user_admin)
+
+        voting = Voting.objects.create(name='Votación de ejemplo', desc='Descripción de la votación', question = self.question, model='IDENTITY', seats=0)
+        voting.auths.set([self.auth])
+
+        url = reverse('edit_voting_detail', args=[voting.id])
+
+        # Verificar la rama else
+        response_get = self.client.get(url)
+        self.assertEqual(response_get.status_code, 200)
+
+        data = {'name': 'Nuevo nombre',
+                'desc': 'Nueva descripción',
+                'question': voting.question.id,
+                'auths': [auth.id for auth in voting.auths.all()],
+                'model': voting.model,
+                'seats': voting.seats                 
+        }
+
+        response = self.client.post(url, data)
+
+
+        self.assertEqual(response.status_code, 302)
+        
+
+        voting.refresh_from_db()
+        self.assertEqual(voting.name, 'Nuevo nombre')
+        self.assertEqual(voting.desc, 'Nueva descripción')
+
+
+
+    def test_all_voting_view_with_no_staf(self):
+        self.client.force_login(self.user_no_admin)
+        response = self.client.get(reverse('allVotings'))
+        
+        self.assertEqual(response.status_code, 403)
+        self.assertTemplateUsed(response, '403.html')
+
+    def test_all_voting_view_with_staf(self):
+        self.client.force_login(self.user_admin)
+        response = self.client.get(reverse('allVotings'))
+
+        self.assertEqual(response.status_code, 200)
+
+    def test_new_auth_view_with_no_staff_user(self):
+        self.client.force_login(self.user_no_admin)
+
+        response = self.client.get(reverse('newAuth'))
+
+        self.assertEqual(response.status_code, 403)
+        self.assertTemplateUsed(response, '403.html')
+
+    def test_new_auth_view_with_staff_user(self):
+        self.client.force_login(self.user_admin)
+
+        response = self.client.get(reverse('newAuth'))
+        self.assertEqual(response.status_code, 200)
+
+        self.assertIn('form', response.context)
+        form = response.context['form']
+
+        self.assertIsInstance(form, NewAuthForm)
+
+        data = {
+            id: 10,
+            'name': 'Nombre de auth',
+            'url': 'paginaprueba.com',
+            'me': True,
+        }
+
+        response = self.client.post(reverse('newAuth'), data)
+        self.assertEqual(response.status_code, 302)
+
+    def test_start_stop_tally_voting_no_staff_user(self):
+        self.client.force_login(self.user_no_admin)
+        response = self.client.get(reverse('start_voting'))
+        self.assertEqual(response.status_code, 403)
+
+        response = self.client.get(reverse('stop_voting'))
+        self.assertEqual(response.status_code, 403)
+
+        response = self.client.get(reverse('tally_voting'))
+        self.assertEqual(response.status_code, 403)
+
+    # def test_start_voting_staff_user(self):
+    #     self.client.force_login(self.user_admin)
+
+    #     voting = Voting.objects.create(name='Votación de ejemplo', desc='Descripción de la votación', question = self.question, model='IDENTITY', seats=0)
+    #     voting.auths.set([self.auth])
+    #     voting.save()
+
+    #     response_post = self.client.post(reverse('start_voting'), {'voting_id': voting.id})
+
+    #     self.assertEqual(response_post.status_code, 302)
+
+    #     updated_voting = Voting.objects.get(id=voting.id)
+    #     self.assertIsNotNone(updated_voting.start_date)
+    #     self.assertIsNotNone(updated_voting.pub_key)
+
+    # def test_stop_voting_staff_user(self):
+    #     self.client.force_login(self.user_admin)
+
+    #     voting = Voting.objects.create(name='Votación de ejemplo', desc='Descripción de la votación', question = self.question, model='IDENTITY', seats=0)
+    #     voting.auths.set([self.auth])
+    #     voting.save()
+
+    #     response_post = self.client.post(reverse('stop_voting'), {'voting_id': voting.id})
+
+    #     self.assertEqual(response_post.status_code, 302)
+
+    #     updated_voting = Voting.objects.get(id=voting.id)
+    #     self.assertIsNotNone(updated_voting.end_date)
+        
+class CreateQuestionView(TestCase):
+    
+    def test_create_view(self):
+        
+        self.client = Client()
+        self.user = get_user_model().objects.create_user(username = 'adminadmin', password='adminadmin', is_staff=True, is_superuser=True)
+        self.client.force_login(self.user)
+    
+        url = reverse('new_question')
+        response = self.client.get(url)
+        
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'Desc', count=1)
+        
+    def test_create_question_with_form(self):
+        
+        self.client = Client()
+        self.user = get_user_model().objects.create_user(username = 'adminadmin', password='adminadmin', is_staff=True, is_superuser=True)
+        self.client.force_login(self.user)
+        
+        form_data = {
+            'desc': 'Prueba',
+            'cattegory': 'OPTIONS',
+            # Agrega más campos según tu formulario
+        }
+        
+        url = reverse('new_question')
+        response_post = self.client.post(url, data=form_data)
+        self.assertEqual(response_post.status_code, 200)
+        
+        question = Question.objects.get(desc="Prueba")
+        self.assertEqual(question.desc,"Prueba")
+    
+    def test_create_question_no_admin(self):
+        url = reverse('new_question')
+        response = self.client.get(url)
+        self.assertTemplateUsed(response,'403.html')
+    
+    def test_create_question_with_error(self):
+        
+        self.client = Client()
+        self.user = get_user_model().objects.create_user(username = 'adminadmin', password='adminadmin', is_staff=True, is_superuser=True)
+        self.client.force_login(self.user)
+        
+        form = QuestionForm(data={})
+
+        self.assertFalse(form.is_valid())
+        self.assertTrue('desc' in form.errors)
+        
+class QuestionAllView(TestCase):
+    
+    def setUp(self):
+        q = Question(desc='Descripcion')
+        q.save()
+        
+        opt1 = QuestionOption(question=q, option='opcion 1')
+        opt1.save()
+        opt1 = QuestionOption(question=q, option='opcion 2')
+        opt1.save()
+
+        q1 = Question(desc='Descripcion2')
+        q1.save()
+        
+        opt1 = QuestionOption(question=q1, option='opcion 1')
+        opt1.save()
+        opt1 = QuestionOption(question=q1, option='opcion 2')
+        opt1.save()
+
+        q2 = Question(desc='Descripcion3')
+        q2.save()
+        
+        opt1 = QuestionOption(question=q2, option='opcion 1')
+        opt1.save()
+        opt1 = QuestionOption(question=q2, option='opcion 2')
+        opt1.save()
+
+        super().setUp()
+        
+    def test_all_question_view(self):
+        
+        self.client = Client()
+        self.user = get_user_model().objects.create_user(username = 'adminadmin', password='adminadmin', is_staff=True, is_superuser=True)
+        self.client.force_login(self.user)
+        
+        url = reverse('allQuestion')
+        response = self.client.get(url)
+        
+        self.assertTemplateUsed(response,'all_question.html')
+        self.assertContains(response,"Descripcion")
+        self.assertContains(response,"Descripcion2")
+        self.assertContains(response,"Descripcion3")
+        
+    def test_all_question_without_admin(self):
+        url = reverse('new_question')
+        response = self.client.get(url)
+        self.assertTemplateUsed(response,'403.html')

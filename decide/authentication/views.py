@@ -7,15 +7,13 @@ from rest_framework.status import (
 from rest_framework.views import APIView
 from rest_framework.authtoken.models import Token
 from django.contrib.auth.models import User
-from django.shortcuts import render
 
 from django.db import IntegrityError
-from django.shortcuts import get_object_or_404, render,redirect
-from django.contrib.auth.forms import UserCreationForm
-from django.core.exceptions import ObjectDoesNotExist
-from django.contrib.auth.views import LoginView
-from django.views.generic import TemplateView
-from django.contrib.auth import authenticate, login
+from django.shortcuts import get_object_or_404, render, redirect
+from django.views.generic import TemplateView, View
+from django.contrib.auth import authenticate, login, logout
+
+from django.contrib.auth import get_user_model
 
 from .forms import LoginForm
 
@@ -42,6 +40,8 @@ class SigninView(TemplateView):
     
     def get(self, request):
         form_class = LoginForm(None)
+        if request.user.is_authenticated:
+            return render(request, 'base.html')
         return render(request, 'login.html', {'form': form_class, 'msg': None})
     
 class MenuView(TemplateView):
@@ -58,23 +58,18 @@ class GetUserView(APIView):
         tk = get_object_or_404(Token, key=key)
         return Response(UserSerializer(tk.user, many=False).data)
 
-
-class LogoutView(APIView):
+class LogoutView(View):
+    def get(self, request):
+        if request.user.is_authenticated:
+            logout(request)
+        return redirect('/')
+    
     def post(self, request):
-        key = request.data.get('token', '')
-        try:
-            tk = Token.objects.get(key=key)
-            tk.delete()
-        except ObjectDoesNotExist:
-            pass
-
-        return Response({})
-
+        if request.user.is_authenticated:
+            logout(request)
+        return redirect('/')
 
 class RegisterView(APIView):
-    
-  
-
     def get(self, request):
         
         return render(request, 'register.html')
@@ -97,3 +92,42 @@ class RegisterView(APIView):
         except IntegrityError:
             return Response({}, status=HTTP_400_BAD_REQUEST)
         return Response({'user_pk': user.pk, 'token': token.key}, HTTP_201_CREATED)
+
+class RegisterUserView(APIView):
+    def get(self, request):
+        return render(request, 'register.html')
+    
+    def post(self, request):
+        email = request.data.get('email', '')
+
+        username = request.data.get('username', '')
+        pwd = request.data.get('password', '')
+        pwd_confirm = request.data.get('password_confirm', '')
+        email = request.data.get('email', '')
+
+        User = get_user_model()
+        errors = []
+
+        if not username or not pwd or not pwd_confirm or not email:
+            errors.append('All fields are required.')
+
+        if User.objects.filter(username=username).exists():
+            errors.append('The username is already in use.')
+
+        if pwd != pwd_confirm:
+            errors.append('The passwords do not match.')
+
+        if len(pwd) < 8:
+            errors.append('The password must have 8 characters at least.')
+
+        if errors:
+            return render(request, 'register.html', {'errors': errors})
+
+        try:
+            user = User(username=username)
+            user.set_password(pwd)
+            user.save()
+            message = 'Account successfully created.'
+        except IntegrityError:
+            return Response({}, status=HTTP_400_BAD_REQUEST)
+        return render(request, 'login.html', {'message': message})
