@@ -241,6 +241,14 @@
     },
     {
         "model": "voting.question",
+        "pk": 2,
+        "fields": {
+            "desc": "¿Es esto una votación de Sí/No?",
+            "cattegory": "YES/NO"
+        }
+    },
+    {
+        "model": "voting.question",
         "pk": 1,
         "fields": {
             "desc": "¿Es esto una votación correcta?",
@@ -331,6 +339,24 @@
                 1
             ]
         }
+    },
+    {
+        "model": "voting.voting",
+            "pk": 3,
+            "fields": {
+                "name": "Votación D'HONDT",
+                "desc": "Esta es la descripción de una votación con el modelo D'Hondt",
+                "question": 1,
+                "start_date": null,
+                "end_date": null,
+                "pub_key": null,
+                "tally": null,
+                "postproc": null,
+                "model": "DHONDT",
+                "auths": [
+                    1
+                ]
+            }
     },
     {
         "model": "sites.site",
