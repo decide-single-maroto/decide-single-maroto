@@ -20,7 +20,6 @@ class PostProcView(APIView):
         seats={}
 
         results={}
-        print(options)
         for opt in options: 
             if opt['option'] not in results: 
                 results[opt['option']] = opt['votes']

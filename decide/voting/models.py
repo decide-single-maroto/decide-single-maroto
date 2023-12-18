@@ -53,19 +53,9 @@ class Voting(models.Model):
     postproc = JSONField(blank=True, null=True)
 
     def create_pubkey(self):
+      
         if self.pub_key or not self.auths.count():
             return
-        
-        if self.question.cattegory == "YES/NO":
-            if self.question.options.all().count() != 0:
-                for opt in self.question.options.all():
-                    opt.delete()
-            
-            option1 = QuestionOption(question = self.question, option = "Yes", number = 1)
-            option1.save()
-            option2 = QuestionOption(question = self.question, option = "No", number = 2)
-            option2.save()
-        
         auth = self.auths.first()
         data = {
             "voting": self.id,
@@ -151,3 +141,15 @@ class Voting(models.Model):
 
     def __str__(self):
         return self.name
+
+    def create_options_yes_no(self):
+        
+            if self.question.cattegory == "YES/NO":
+                if self.question.options.all().count() != 0:
+                    for opt in self.question.options.all():
+                        opt.delete()
+                
+                option1 = QuestionOption(question = self.question, option = "Yes", number = 1)
+                option1.save()
+                option2 = QuestionOption(question = self.question, option = "No", number = 2)
+                option2.save()
