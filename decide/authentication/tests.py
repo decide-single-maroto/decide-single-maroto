@@ -1,4 +1,3 @@
-from django.test import TestCase
 from rest_framework.test import APIClient
 from rest_framework.test import APITestCase
 from django.urls import reverse
@@ -81,7 +80,6 @@ class AuthTestCase(APITestCase):
         self.assertEqual(response.status_code, 302)
 
     def assert_errors_in_response(self, response, expected_errors):
-        content = response.content.decode()
 
         # Verifica que existe la lista de errores
         self.assertContains(response, '<ul>', status_code=200)
@@ -115,7 +113,7 @@ class AuthTestCase(APITestCase):
 
         data_reg_duplicated = {'email': 'duplicated2@reguser.com', 'username': 'duplicated', 'password': 'password123', 'password_confirm': 'password123'}
         response_register_duplicated = self.client.post(reverse('register_user'), data_reg_duplicated, format='json')
-        self.assertEqual(response_register_duplicated.status_code, 200) 
+        self.assertEqual(response_register_duplicated.status_code, 200)
         expected_errors = ['The username is already in use.']
         self.assert_errors_in_response(response_register_duplicated, expected_errors)
 

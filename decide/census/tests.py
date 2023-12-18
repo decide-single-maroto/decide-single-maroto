@@ -2,7 +2,6 @@ from django.contrib.auth.models import User
 from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.test import RequestFactory, TestCase
 from django.http import HttpResponse
-from django.http import HttpResponseBadRequest
 from django.core.files.uploadedfile import SimpleUploadedFile
 
 from selenium import webdriver
@@ -12,8 +11,6 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.webdriver.common.keys import Keys
 
 import json
-import csv
-import io
 
 from .models import Census
 from voting.models import Voting, Question
@@ -23,11 +20,11 @@ from django.contrib.auth import get_user_model
 from django.contrib.sessions.middleware import SessionMiddleware
 from django.test import Client
 from django.urls import reverse
-from .admin import CensusAdmin, VotingIdFilter
+from .admin import VotingIdFilter
 from .views import all_census, delete_census, export_census, validate_ids, validate_and_read_csv, import_census
 from .forms import NewCensusForm
 
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from django.core.files.uploadedfile import InMemoryUploadedFile
 from io import BytesIO
 
@@ -328,7 +325,7 @@ class CensusActionsTest(TestCase):
 
         request.user = self.user1
 
-        response = delete_census(request)
+        delete_census(request)
 
         self.assertFalse(Census.objects.filter(id=census.id).exists())
 
@@ -341,7 +338,7 @@ class CensusActionsTest(TestCase):
 
         request.user = self.user1
 
-        response = delete_census(request)
+        delete_census(request)
 
         # Verificar que todos los censos han sido eliminados
         self.assertFalse(Census.objects.all().exists())
@@ -355,7 +352,7 @@ class CensusActionsTest(TestCase):
 
         request.user = self.user1
 
-        response = delete_census(request)
+        delete_census(request)
 
         # Verificar que se llamó a messages.error con el mensaje correcto
         mock_messages.error.assert_called_once_with(request, 'No existen censos con los IDs proporcionados.')
@@ -373,7 +370,7 @@ class CensusActionsTest(TestCase):
         self.assertEqual(response.content.decode(), expected_content)  
 
     def test_export_census_selected_ids(self):
-    # Crear una solicitud GET falsa con ids seleccionados
+        # Crear una solicitud GET falsa con ids seleccionados
         request = self.factory.get('/census/export_census/', {'ids': f'{self.census1.id},{self.census2.id}'})
         request.user = self.user1
 
@@ -467,7 +464,7 @@ class CensusActionsTest(TestCase):
         mock_validate_and_read_csv.return_value = ([Census(voting_id=self.voting.id, voter_id=self.user1.id)], None)
 
         # Llamar a la función import_census
-        response = import_census(request)
+        import_census(request)
 
         # Verificar que se llamó a validate_and_read_csv y que se creó un censo
         mock_validate_and_read_csv.assert_called_once()

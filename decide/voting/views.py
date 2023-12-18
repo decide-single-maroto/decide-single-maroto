@@ -10,8 +10,7 @@ from .models import Question, QuestionOption, Voting
 from .serializers import SimpleVotingSerializer, VotingSerializer
 from base.perms import UserIsStaff
 from base.models import Auth
-from .forms import *
-from django.views import View
+from .forms import NewVotingForm, NewAuthForm, EditVotingForm, QuestionForm, QuestionOptionFormSet
 
 class VotingView(generics.ListCreateAPIView):
     queryset = Voting.objects.all()
@@ -110,7 +109,7 @@ def new_voting(request):
     if not request.user.is_staff:
         template = loader.get_template('403.html')
         return HttpResponseForbidden(template.render({}, request))
-    
+
     if request.method == 'POST':
         form = NewVotingForm(request.POST, request.FILES)
 
@@ -172,7 +171,7 @@ def new_auth(request):
     if request.method == 'POST':
         form = NewAuthForm(request.POST, request.FILES)
         if form.is_valid():
-            item = form.save() 
+            form.save()
             return redirect('/base')
 
     else:
@@ -190,7 +189,7 @@ def start_voting(request):
     else:
         if request.method == 'POST':
             voting_id = request.POST.get('voting_id')
-            voting = get_object_or_404(Voting, pk=voting_id)        
+            voting = get_object_or_404(Voting, pk=voting_id)
             voting.create_pubkey()
             voting.start_date = timezone.now()
             voting.save()

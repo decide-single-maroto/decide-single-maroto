@@ -9,17 +9,12 @@ from django.contrib.staticfiles.testing import StaticLiveServerTestCase
 from django.test import TestCase
 from django.test import Client
 
-from voting.forms import *
-from .forms import QuestionForm, QuestionOptionForm
-from rest_framework.test import APIClient
-from rest_framework.test import APITestCase
-from django.test import Client
+from voting.forms import NewVotingForm, NewAuthForm
+from .forms import QuestionForm
 
 from selenium import webdriver
-from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.common.keys import Keys
 
 from base import mods
 from base.tests import BaseTestCase
@@ -29,9 +24,6 @@ from mixnet.mixcrypt import MixCrypt
 from mixnet.models import Auth
 from voting.models import Voting, Question, QuestionOption
 from datetime import datetime
-from django.urls import reverse
-from django.contrib.auth import get_user_model
-
 class VotingTestCase(BaseTestCase):
 
     def test_update_voting_405(self):
@@ -489,7 +481,7 @@ class VotingFrontEndTestCase(TestCase):
         self.auth = Auth(name = 'authDeEjmplo', url = 'http://localhost:8000')
         self.auth.save()
 
-    def test_new_voting_view_with_non_staff_user(self):      
+    def test_new_voting_view_with_non_staff_user(self):
         self.client.force_login(self.user_no_admin)
 
         response = self.client.get(reverse('new_voting'))
@@ -508,7 +500,6 @@ class VotingFrontEndTestCase(TestCase):
 
         self.assertIsInstance(form, NewVotingForm)
 
-
         selected_model = 'IDENTITY'
 
         data = {
@@ -526,7 +517,7 @@ class VotingFrontEndTestCase(TestCase):
 
 
 
-    def test_edit_voting_with_non_staff_user(self):  
+    def test_edit_voting_with_non_staff_user(self):
         self.client.force_login(self.user_no_admin)
 
         voting = Voting.objects.create(name='Votación de ejemplo', desc='Descripción de la votación', question = self.question, model='IDENTITY', seats=0)
@@ -537,7 +528,7 @@ class VotingFrontEndTestCase(TestCase):
         self.assertEqual(response.status_code, 403)
         self.assertTemplateUsed(response, '403.html')
 
-    def test_edit_voting_with_staff_user(self):  
+    def test_edit_voting_with_staff_user(self):
         self.client.force_login(self.user_admin)
 
         voting = Voting.objects.create(name='Votación de ejemplo', desc='Descripción de la votación', question = self.question, model='IDENTITY', seats=0)
@@ -613,13 +604,13 @@ class VotingFrontEndTestCase(TestCase):
 
     def test_start_stop_tally_voting_no_staff_user(self):
         self.client.force_login(self.user_no_admin)
-        response = self.client.get(reverse('start_voting'))        
+        response = self.client.get(reverse('start_voting'))
         self.assertEqual(response.status_code, 403)
 
-        response = self.client.get(reverse('stop_voting'))        
+        response = self.client.get(reverse('stop_voting'))
         self.assertEqual(response.status_code, 403)
 
-        response = self.client.get(reverse('tally_voting'))        
+        response = self.client.get(reverse('tally_voting'))
         self.assertEqual(response.status_code, 403)
 
     # def test_start_voting_staff_user(self):
@@ -695,12 +686,6 @@ class CreateQuestionView(TestCase):
         self.user = get_user_model().objects.create_user(username = 'adminadmin', password='adminadmin', is_staff=True, is_superuser=True)
         self.client.force_login(self.user)
         
-        form_data = {
-            'cattegory': 'OPTIONS',
-            # Agrega más campos según tu formulario
-        }
-        url = reverse('new_question')
-        
         form = QuestionForm(data={})
 
         self.assertFalse(form.is_valid())
@@ -749,7 +734,7 @@ class QuestionAllView(TestCase):
         self.assertContains(response,"Descripcion2")
         self.assertContains(response,"Descripcion3")
         
-    def test_all_question_without_admin(self):    
+    def test_all_question_without_admin(self):
         url = reverse('new_question')
         response = self.client.get(url)
         self.assertTemplateUsed(response,'403.html')

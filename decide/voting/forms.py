@@ -49,12 +49,13 @@ class NewAuthForm(forms.ModelForm):
             }),
             'me': forms.CheckboxInput(attrs={
                 'class': INPUT_CLASSES
-            }),            
+            }),
         }
 class QuestionOptionForm(forms.ModelForm):
     class Meta:
         model = QuestionOption
         fields = ['number','option']
+
 
 QuestionOptionFormSet = forms.inlineformset_factory(Question, QuestionOption, form=QuestionOptionForm, extra=1, can_delete=True)
 

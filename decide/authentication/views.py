@@ -127,7 +127,6 @@ class RegisterUserView(APIView):
             user = User(username=username)
             user.set_password(pwd)
             user.save()
-            token, _ = Token.objects.get_or_create(user=user)
             message = 'Account successfully created.'
         except IntegrityError:
             return Response({}, status=HTTP_400_BAD_REQUEST)

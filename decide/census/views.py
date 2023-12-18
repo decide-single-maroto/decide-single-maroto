@@ -1,26 +1,17 @@
-from import_export.admin import ImportMixin
 from django.db import transaction
 from django.db.utils import IntegrityError
 from django.core.exceptions import ObjectDoesNotExist
-from django.core.exceptions import ValidationError
-from django.shortcuts import  render, redirect, get_object_or_404
+from django.shortcuts import  render, redirect
 from django.contrib import messages
-from django.contrib import admin
 from django.contrib.auth.models import User
 from django.template import loader
-from django.template import loader
-from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse
 from django.http import HttpResponseForbidden
 from django.http import HttpResponseBadRequest
-from django.http import HttpResponseRedirect
 from base.perms import UserIsStaff
-from tablib import Dataset
 from .models import Census
 from voting.models import Voting
-from .resources import CensusResource
 from .forms import NewCensusForm, ImportCensusForm
-from .admin import CensusAdmin
 from rest_framework import generics
 from rest_framework.response import Response
 from rest_framework.status import (
@@ -33,7 +24,6 @@ from rest_framework.status import (
 import csv
 import json
 import io
-from django.contrib.auth.decorators import login_required
 
 
 
@@ -123,7 +113,6 @@ def validate_and_read_csv(csv_file):
                 voter_id = int(row[1])
             except ValueError:
                 return None, 'Todos los valores deben ser enteros.'
-
             if not validate_ids(voting_id, voter_id):
                 return None, 'El archivo contiene datos no existentes en la base de datos.'
             elif Census.objects.filter(voting_id=voting_id, voter_id=voter_id).exists():
@@ -154,7 +143,9 @@ def import_census(request):
                 return redirect('all_census')
 
             # Verificar si cada censo ya existe antes de agregarlo a new_census_list
-            unique_census_list = [census for census in new_census_list if not Census.objects.filter(voting_id=census.voting_id, voter_id=census.voter_id).exists()]
+            unique_census_list = [census for census in new_census_list 
+                                  if not Census.objects.filter(voting_id=census.voting_id, 
+                                                               voter_id=census.voter_id).exists()]
 
             messages.success(request, 'Censo importado correctamente.')
             with transaction.atomic():
@@ -226,7 +217,8 @@ def new_census_form(request):
                     print("IntegrityError caught")
                     request.session['form_messages'] = [{'message': 'Censos con este Voting ID o Voter Id ya existen', 'tag': 'error'}]
         else:
-            request.session['form_messages'] = [{'message': f'{field.capitalize()}: {error}', 'tag': 'error'} for field, errors in form.errors.items() for error in errors]
+            request.session['form_messages'] = [{'message': f'{field.capitalize()}: {error}', 'tag': 'error'} 
+                                                for field, errors in form.errors.items() for error in errors]
             if '__all__' in form.errors:
                 for error in form.errors['__all__']:
                     if 'already exists' in error:
