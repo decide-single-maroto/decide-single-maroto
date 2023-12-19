@@ -67,6 +67,16 @@ class VisualizerTestCase(StaticLiveServerTestCase):
 
         self.assertTrue(voting_state, "Voting started without census")
 
+    def test_visualizer_started_with_nonempty_census(self):
+        q = self.create_question('test question')
+        v = self.create_voting('test voting started with nonempty census', start_date=timezone.now(), question_id=q.id)
+        self.create_census(1, v.id)
+
+        self.driver.get(f'{self.live_server_url}/visualizer/{v.pk}/')
+        voting_state = self.driver.find_element(By.ID, "participation").text != "-"
+
+        self.assertTrue(voting_state, "Voting started with nonempty census")
+
     def test_visualizer_started_with_census_without_participation(self):
         q = self.create_question('test question')
         v = self.create_voting('test voting', start_date=timezone.now(), question_id=q.id)
@@ -77,3 +87,14 @@ class VisualizerTestCase(StaticLiveServerTestCase):
         voting_state = self.driver.find_element(By.ID, "participation").text == "0.0%"
 
         self.assertTrue(voting_state, "Voting started with census and no participation")
+
+    def test_visualizer_started_with_census_with_participation(self):
+        q = self.create_question('test question')
+        v = self.create_voting('test voting', start_date=timezone.now(), question_id=q.id)
+        self.create_census(1, v.id)
+        self.create_census(2, v.id)
+
+        self.driver.get(f'{self.live_server_url}/visualizer/{v.pk}/')
+        voting_state = self.driver.find_element(By.ID, "participation").text != "0.0%"
+
+        self.assertFalse(voting_state, "Voting started with census and participation")
