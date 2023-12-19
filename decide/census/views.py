@@ -32,9 +32,7 @@ def all_census(request):
 
     context = {
         'census_list': census_list,
-        'messages': request.session.pop('all_census_messages', None),
     }
-
     return render(request, 'all_census.html', context)
 
 def delete_census(request):
