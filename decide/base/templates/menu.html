@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sesión Iniciada</title>
+</head>
+<body>
+    <div class="container mt-5">
+    <h1>¡Bienvenido {{ user.username }}!</h1>
+        <p>Correo electrónico: {{ user.email }}</p>
+    </div>
+</body>
+</html>
+{% endblock %}

@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.utils import timezone
 
-from .models import QuestionOption
+from .models import QuestionOption 
 from .models import Question
 from .models import Voting
 
@@ -11,6 +11,7 @@ from .filters import StartedFilter
 def start(modeladmin, request, queryset):
     for v in queryset.all():
         v.create_pubkey()
+        v.create_options_yes_no()
         v.start_date = timezone.now()
         v.save()
 
@@ -34,9 +35,22 @@ class QuestionOptionInline(admin.TabularInline):
 class QuestionAdmin(admin.ModelAdmin):
     inlines = [QuestionOptionInline]
 
+class QuiestionYesNoAdmin(admin.ModelAdmin):
+    list_display = ['desc']
+
+class VotingYesNoAdmin(admin.ModelAdmin):
+    list_display = ('name', 'start_date', 'end_date','model')
+    readonly_fields = ('start_date', 'end_date', 'pub_key',
+                       'tally', 'postproc')
+    date_hierarchy = 'start_date'
+    list_filter = (StartedFilter,)
+    search_fields = ('name', )
+
+    actions = [ start, stop, tally ]
+
 
 class VotingAdmin(admin.ModelAdmin):
-    list_display = ('name', 'start_date', 'end_date')
+    list_display = ('name', 'start_date', 'end_date','model')
     readonly_fields = ('start_date', 'end_date', 'pub_key',
                        'tally', 'postproc')
     date_hierarchy = 'start_date'
@@ -48,3 +62,4 @@ class VotingAdmin(admin.ModelAdmin):
 
 admin.site.register(Voting, VotingAdmin)
 admin.site.register(Question, QuestionAdmin)
+
